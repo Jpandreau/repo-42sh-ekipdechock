@@ -1,0 +1,14 @@
+*.out
+*.a
+*.o
+*.gcda
+*.gcno
+*.c.swp
+*.h.swp
+*.pch
+.vscode/
+obj/
+README
+testeur/*
+unit_tests*
+mysh
