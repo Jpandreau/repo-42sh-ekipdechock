@@ -22,6 +22,8 @@ int buildin(char *cmd)
         return 1;
     if (!my_strcmp(cmd, "exit"))
         return 1;
+    if (!my_strcmp(cmd, "history"))
+        return 1;
     return 0;
 }
 
@@ -39,5 +41,7 @@ int run_buildin_args(char **args, char ***env)
         return unsetenv_buildin_args(args, env);
     if (!my_strcmp(args[0], "exit"))
         return exit_buildin_args(args);
+    if (!my_strcmp(args[0], "history"))
+        return history_buildin_args(args);
     return 0;
 }
