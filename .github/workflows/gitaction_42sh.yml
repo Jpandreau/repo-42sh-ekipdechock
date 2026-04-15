@@ -1,4 +1,4 @@
-name: Chocolatine
+name: 42sh
 
 "on":
   push:
@@ -11,7 +11,7 @@ name: Chocolatine
 env:
   MIRROR_SSH_URL: "git@github.com:EpitechPGE1-2025/G-PSU-200-MLN-2-1-42sh-1.git"
   MIRROR_REPO: "EpitechPGE1-2025/G-PSU-200-MLN-2-1-42sh-1"
-  EXECUTABLES: "mysh"
+  EXECUTABLES: "42sh"
 
 jobs:
   check_compilation_and_coding_style:
@@ -80,7 +80,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: epitechcontent/epitest-docker
-    if: github.repository != 'Jpandreau/testrepo'
+    if: github.repository != 'EpitechPGE1-2025/G-PSU-200-MLN-2-1-42sh-1'
     needs: check_compilation_and_coding_style
     steps:
       - name: "Checkout repository"
@@ -94,7 +94,7 @@ jobs:
         run: |
           IFS=$','
           for exec in $EXECUTABLES; do
-            valgrind --leak-check=full --show-leak-kinds=all \
+            echo "exit" | valgrind --leak-check=full --show-leak-kinds=all \
               --log-file=valgrind_output.log \
               ./$exec || true
             MALLOCS=$(grep -oP "total heap usage: \K[0-9]+" valgrind_output.log | head -1)
