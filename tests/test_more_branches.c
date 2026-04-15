@@ -138,6 +138,11 @@ Test(cd_more, my_chdir_permission_denied)
     char *dir = mkdtemp(dir_template);
     char **env = malloc(sizeof(char *) * 2);
 
+    if (getuid() == 0) {
+        rmdir(dir);
+        free(env);
+        cr_skip_test("running as root, chmod has no effect");
+    }
     cr_assert_not_null(dir);
     cr_assert_not_null(env);
     cr_assert_not_null(getcwd(cwd, sizeof(cwd)));
