@@ -10,6 +10,7 @@
 #include "base.h"
 #include "buildin.h"
 #include "my.h"
+#include "small_headers.h"
 
 Test(buildin, recognize_cd)
 {
@@ -34,6 +35,11 @@ Test(buildin, recognize_unsetenv)
 Test(buildin, recognize_exit)
 {
     cr_assert_eq(buildin("exit"), 1);
+}
+
+Test(buildin, recognize_history)
+{
+    cr_assert_eq(buildin("history"), 1);
 }
 
 Test(buildin, not_builtin_ls)
@@ -156,14 +162,14 @@ Test(run_buildin_args, null_args)
 {
     char **env = NULL;
 
-    cr_assert_eq(run_buildin_args(NULL, &env), 84);
+    cr_assert_eq(run_buildin_args(NULL, &env, NULL), 84);
 }
 
 Test(run_buildin_args, null_env)
 {
     char *args[] = {"env", NULL};
 
-    cr_assert_eq(run_buildin_args(args, NULL), 84);
+    cr_assert_eq(run_buildin_args(args, NULL, NULL), 84);
 }
 
 Test(run_buildin_args, setenv_dispatch)
@@ -174,7 +180,7 @@ Test(run_buildin_args, setenv_dispatch)
 
     env = malloc(sizeof(char *) * 1);
     env[0] = NULL;
-    ret = run_buildin_args(args, &env);
+    ret = run_buildin_args(args, &env, NULL);
     cr_assert_eq(ret, 0);
     cr_assert_not_null(env);
     cr_assert_str_eq(env[0], "TEST=value");
@@ -190,8 +196,75 @@ Test(run_buildin_args, unsetenv_dispatch)
     env = malloc(sizeof(char *) * 2);
     env[0] = my_strdup("TEST=old");
     env[1] = NULL;
-    ret = run_buildin_args(args, &env);
+    ret = run_buildin_args(args, &env, NULL);
     cr_assert_eq(ret, 0);
     cr_assert_null(env[0]);
     free_array(env);
+}
+
+Test(run_buildin_args, history_dispatch_empty, .init = cr_redirect_stdout)
+{
+    char *args[] = {"history", NULL};
+    char **env = NULL;
+    history_t history = {0};
+
+    history_init(&history);
+    cr_assert_eq(run_buildin_args(args, &env, &history), 0);
+    fflush(stdout);
+    cr_assert_stdout_eq_str("");
+    history_destroy(&history);
+}
+
+Test(run_buildin_args, history_dispatch_output, .init = cr_redirect_stdout)
+{
+    char *args[] = {"history", NULL};
+    char **env = NULL;
+    char expected[64] = {0};
+    history_t history = {0};
+
+    history_init(&history);
+    history_add(&history, "ls");
+    history_add(&history, "pwd");
+    snprintf(expected, sizeof(expected), "1\tls\n2\tpwd\n");
+    cr_assert_eq(run_buildin_args(args, &env, &history), 0);
+    fflush(stdout);
+    cr_assert_stdout_eq_str(expected);
+    history_destroy(&history);
+}
+
+Test(run_buildin_args, history_with_args_returns_84)
+{
+    char *args[] = {"history", "10", NULL};
+    char **env = NULL;
+
+    cr_assert_eq(run_buildin_args(args, &env, NULL), 84);
+}
+
+Test(history_buildin_args, null_args_returns_84)
+{
+    cr_assert_eq(history_buildin_args(NULL, NULL), 84);
+}
+
+Test(history_buildin_args, null_argv0_returns_84)
+{
+    char *args[] = {NULL};
+
+    cr_assert_eq(history_buildin_args(args, NULL), 84);
+}
+
+Test(history_buildin_args, prints_three_entries, .init = cr_redirect_stdout)
+{
+    char *args[] = {"history", NULL};
+    char expected[96] = {0};
+    history_t history = {0};
+
+    history_init(&history);
+    history_add(&history, "ls");
+    history_add(&history, "pwd");
+    history_add(&history, "echo ok");
+    snprintf(expected, sizeof(expected), "1\tls\n2\tpwd\n3\techo ok\n");
+    cr_assert_eq(history_buildin_args(args, &history), 0);
+    fflush(stdout);
+    cr_assert_stdout_eq_str(expected);
+    history_destroy(&history);
 }
