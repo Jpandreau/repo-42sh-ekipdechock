@@ -41,6 +41,11 @@ void history_destroy(history_t *history);
 int history_add(history_t *history, char *line);
 int history_expand_line(history_t *history, char *line, char **expanded);
 int interactive_getline(char **line, size_t *len, history_t *history);
+int history_skip_spaces(char *line);
+int history_only_spaces_after(char *line, int pos);
+char *history_expand_number(char *line, int idx);
+char *history_expand_prefix(char *line, int idx);
+char *history_resolve_bang(char *line, int idx);
 
 int run_line(char *input_line, char ***env, int *exit_code);
 int open_and_stat(char *filename, struct stat *st);
