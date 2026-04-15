@@ -8,6 +8,7 @@
 #ifndef SMALL_HEADERS
     #define SMALL_HEADERS
 
+    #include <stddef.h>
     #include <sys/stat.h>
 
 typedef struct tokenize_ctx_s {
@@ -19,6 +20,12 @@ typedef struct tokenize_ctx_s {
     char **tokens;
 } tokenize_ctx_t;
 
+typedef struct history_s {
+    char **entries;
+    int size;
+    int capacity;
+} history_t;
+
 char **tokenize_line(char *line);
 int tokenize_step(char *line, tokenize_ctx_t *ctx);
 
@@ -28,6 +35,12 @@ int parse_exit_code_arg(char *str, int *ok);
 
 int init_exec(char **line, char ***env);
 int handle_line(char **line, char ***env);
+
+int history_init(history_t *history);
+void history_destroy(history_t *history);
+int history_add(history_t *history, char *line);
+int history_expand_line(history_t *history, char *line, char **expanded);
+int interactive_getline(char **line, size_t *len, history_t *history);
 
 int run_line(char *input_line, char ***env, int *exit_code);
 int open_and_stat(char *filename, struct stat *st);
