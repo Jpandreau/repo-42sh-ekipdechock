@@ -9,7 +9,13 @@
 #include "small_headers.h"
 
 #include <stdio.h>
-#include <readline/history.h>
+
+static char *history_get_entry(history_t *history, int index)
+{
+    if (history == NULL || index <= 0 || index > history->size)
+        return NULL;
+    return history->entries[index - 1];
+}
 
 int history_skip_spaces(char *line)
 {
@@ -28,10 +34,9 @@ int history_only_spaces_after(char *line, int pos)
     return 1;
 }
 
-char *history_expand_number(char *line, int idx)
+char *history_expand_number(char *line, int idx, history_t *history)
 {
     long n = 0;
-    HIST_ENTRY *entry = NULL;
 
     if (line[idx] < '0' || line[idx] > '9')
         return NULL;
@@ -41,42 +46,38 @@ char *history_expand_number(char *line, int idx)
     }
     if (!history_only_spaces_after(line, idx) || n <= 0)
         return NULL;
-    entry = history_get((int)n);
-    if (entry == NULL || entry->line == NULL)
+    if (history_get_entry(history, (int)n) == NULL)
         return NULL;
-    return my_strdup(entry->line);
+    return my_strdup(history_get_entry(history, (int)n));
 }
 
-char *history_expand_prefix(char *line, int idx)
+char *history_expand_prefix(char *line, int idx, history_t *history)
 {
     int plen = 0;
-    HIST_ENTRY *entry = NULL;
 
     while (line[idx + plen] && line[idx + plen] != ' ' &&
         line[idx + plen] != '\t')
         plen++;
     if (plen == 0 || !history_only_spaces_after(line, idx + plen))
         return NULL;
-    for (int i = history_length; i > 0; i--) {
-        entry = history_get(i);
-        if (entry != NULL && entry->line != NULL &&
-            my_strncmp(entry->line, line + idx, plen) == 0)
-            return my_strdup(entry->line);
+    for (int i = history == NULL ? 0 : history->size; i > 0; i--) {
+        if (history_get_entry(history, i) != NULL &&
+            my_strncmp(history_get_entry(history, i), line + idx, plen) == 0)
+            return my_strdup(history_get_entry(history, i));
     }
     return NULL;
 }
 
-char *history_resolve_bang(char *line, int idx)
+char *history_resolve_bang(history_t *history, char *line, int idx)
 {
-    HIST_ENTRY *entry = NULL;
+    int last = history == NULL ? 0 : history->size;
 
     if (line[idx + 1] == '!' && history_only_spaces_after(line, idx + 2)) {
-        entry = history_get(history_length);
-        if (entry == NULL || entry->line == NULL)
+        if (history_get_entry(history, last) == NULL)
             return NULL;
-        return my_strdup(entry->line);
+        return my_strdup(history_get_entry(history, last));
     }
     if (line[idx + 1] >= '0' && line[idx + 1] <= '9')
-        return history_expand_number(line, idx + 1);
-    return history_expand_prefix(line, idx + 1);
+        return history_expand_number(line, idx + 1, history);
+    return history_expand_prefix(line, idx + 1, history);
 }
