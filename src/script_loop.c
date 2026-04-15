@@ -68,7 +68,7 @@ static int handle_interactive_line(char **line, char ***env, history_t *history)
         return status;
     if (*line == NULL)
         return 0;
-    status = handle_line(line, env);
+    status = handle_line(line, env, history);
     return status;
 }
 
@@ -79,9 +79,10 @@ static int read_next_line(char **line, size_t *len, history_t *history)
     return clean_getline(line, len);
 }
 
-static int handle_noninteractive_line(char **line, char ***env, size_t *len)
+static int handle_noninteractive_line(char **line, char ***env, size_t *len,
+    history_t *history)
 {
-    int status = handle_line(line, env);
+    int status = handle_line(line, env, history);
 
     if (is_exit_status(status))
         return status;
@@ -124,7 +125,7 @@ static int loop_step(char **line, size_t *len, char ***env, history_t *history)
             return status;
         return status;
     }
-    return handle_noninteractive_line(line, env, len);
+    return handle_noninteractive_line(line, env, len, history);
 }
 
 static int handle_exit_status(int *exit_code)

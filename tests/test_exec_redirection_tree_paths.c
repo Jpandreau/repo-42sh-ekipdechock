@@ -53,7 +53,7 @@ Test(exec_redirection, input_missing_returns_1)
 
     cr_assert_not_null(node);
     node->input = my_strdup("/no/such/input/file");
-    cr_assert_eq(exec_cmd_with_redirections(node, &env), 1);
+    cr_assert_eq(exec_cmd_with_redirections(node, &env, NULL), 1);
     free_tree(node);
 }
 
@@ -65,7 +65,7 @@ Test(exec_redirection, output_open_error_returns_1)
 
     cr_assert_not_null(node);
     node->output = my_strdup("/no/such/dir/out.txt");
-    cr_assert_eq(exec_cmd_with_redirections(node, &env), 1);
+    cr_assert_eq(exec_cmd_with_redirections(node, &env, NULL), 1);
     free_tree(node);
 }
 
@@ -86,7 +86,7 @@ Test(exec_redirection, heredoc_fd_prepared_path)
     write(fd_pipe[1], "lineA\n", 6);
     close(fd_pipe[1]);
     node->heredoc_fd = fd_pipe[0];
-    cr_assert_eq(exec_cmd_with_redirections(node, &env), 0);
+    cr_assert_eq(exec_cmd_with_redirections(node, &env, NULL), 0);
     cr_assert_eq(node->heredoc_fd, -1);
     content = read_file_content(out);
     cr_assert_not_null(content);
@@ -115,7 +115,7 @@ Test(exec_redirection, heredoc_dynamic_path)
     close(fd_pipe[1]);
     dup2(fd_pipe[0], STDIN_FILENO);
     close(fd_pipe[0]);
-    cr_assert_eq(exec_cmd_with_redirections(node, &env), 0);
+    cr_assert_eq(exec_cmd_with_redirections(node, &env, NULL), 0);
     dup2(saved_stdin, STDIN_FILENO);
     close(saved_stdin);
     content = read_file_content(out);
@@ -133,8 +133,8 @@ Test(exec_tree_paths, cmd_and_unknown)
     tree_t *cmd = make_cmd_node("env");
     tree_t *unknown = new_node(TOKEN_EOF);
 
-    cr_assert_eq(exec_tree(cmd, &env), 0);
-    cr_assert_eq(exec_tree(unknown, &env), 1);
+    cr_assert_eq(exec_tree(cmd, &env, NULL), 0);
+    cr_assert_eq(exec_tree(unknown, &env, NULL), 1);
     free_tree(cmd);
     free_tree(unknown);
 }
@@ -149,13 +149,13 @@ Test(exec_tree_paths, and_or_sequence_paths)
 
     and_node->left = new_node(TOKEN_EOF);
     and_node->right = make_cmd_node("env");
-    cr_assert_eq(exec_tree(and_node, &env), 1);
+    cr_assert_eq(exec_tree(and_node, &env, NULL), 1);
     or_node->left = new_node(TOKEN_EOF);
     or_node->right = make_cmd_node("env");
-    cr_assert_eq(exec_tree(or_node, &env), 0);
+    cr_assert_eq(exec_tree(or_node, &env, NULL), 0);
     seq_node->left = new_node(TOKEN_EOF);
     seq_node->right = new_node(TOKEN_EOF);
-    cr_assert_eq(exec_tree(seq_node, &env), 1);
+    cr_assert_eq(exec_tree(seq_node, &env, NULL), 1);
     free_tree(and_node);
     free_tree(or_node);
     free_tree(seq_node);
