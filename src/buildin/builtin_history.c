@@ -6,19 +6,20 @@
 */
 
 #include "base.h"
+#include "small_headers.h"
+
 #include <stdio.h>
-#include <readline/history.h>
 
 int history_buildin_args(char **args)
 {
-    HIST_ENTRY **list = NULL;
+    history_t *history = NULL;
 
     if (args == NULL || args[0] == NULL || array_size(args) != 1)
         return 84;
-    list = history_list();
-    if (list == NULL)
+    history = history_current();
+    if (history == NULL || history->entries == NULL)
         return 0;
-    for (int i = 0; list[i] != NULL; i++)
-        dprintf(1, "%d\t%s\n", i + history_base, list[i]->line);
+    for (int i = 0; i < history->size; i++)
+        dprintf(1, "%d\t%s\n", i + 1, history->entries[i]);
     return 0;
 }
