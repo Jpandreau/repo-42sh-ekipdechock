@@ -20,14 +20,13 @@ DEPS	=	$(OBJ:.o=.d)
 
 FLAGS	=	-Wall -Wextra -W -Werror -MMD
 CRITERION	=	-lcriterion --coverage
-READLINE	=	-lreadline
 BUILD	=	42sh
 CRITERION_EXEC	=	unit_tests
 
 all:	$(BUILD)
 
 $(BUILD):	$(OBJ)
-	$(CC) -o $(BUILD) $(OBJ) $(FLAGS) $(INC_DIR) $(READLINE)
+	$(CC) -o $(BUILD) $(OBJ) $(FLAGS) $(INC_DIR)
 
 -include $(DEPS)
 
@@ -44,7 +43,7 @@ fclean:	clean
 re:	fclean all
 
 tests_run: $(BUILD) tests_clean
-	$(CC_TESTS) -o $(CRITERION_EXEC) $(SRC_NO_MAIN) $(TESTS_SRC) $(CRITERION) $(FLAGS) $(INC_DIR) $(READLINE)
+	$(CC_TESTS) -o $(CRITERION_EXEC) $(SRC_NO_MAIN) $(TESTS_SRC) $(CRITERION) $(FLAGS) $(INC_DIR)
 	./$(CRITERION_EXEC)
 
 tests_clean:
