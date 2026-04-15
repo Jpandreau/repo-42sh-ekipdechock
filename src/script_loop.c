@@ -17,6 +17,78 @@ int final_exit_script_loop(int exit_code, char *line, char **env)
     return exit_code;
 }
 
+static int expand_sudo_history(char *line, history_t *history, char **expanded)
+{
+    char *cmd = NULL;
+    char *prefix = NULL;
+    int idx = 5;
+    int status = 0;
+
+    if (my_strncmp(line, "sudo ", 5) != 0)
+        return -1;
+    while (line[idx] == ' ' || line[idx] == '\t')
+        idx++;
+    status = history_expand_line(history, line + idx, &cmd);
+    if (status != 0 || cmd == NULL)
+        return status;
+    prefix = my_strndup(line, idx);
+    *expanded = prefix == NULL ? NULL : my_strcat(prefix, cmd);
+    free(prefix);
+    free(cmd);
+    return *expanded == NULL ? 84 : 0;
+}
+
+static int expand_and_store_history(char **line, history_t *history)
+{
+    char *expanded = NULL;
+    int status = expand_sudo_history(*line, history, &expanded);
+
+    if (status == -1)
+        status = history_expand_line(history, *line, &expanded);
+    free(*line);
+    *line = NULL;
+    if (status == 84)
+        return 84;
+    if (status == 1 || expanded == NULL)
+        return status == 1 ? 0 : 84;
+    *line = expanded;
+    if ((*line)[0] != '\0' && history_add(history, *line) == 84) {
+        free(*line);
+        *line = NULL;
+        return 84;
+    }
+    return 0;
+}
+
+static int handle_interactive_line(char **line, char ***env, history_t *history)
+{
+    int status = expand_and_store_history(line, history);
+
+    if (status != 0)
+        return status;
+    if (*line == NULL)
+        return 0;
+    status = handle_line(line, env);
+    return status;
+}
+
+static int read_next_line(char **line, size_t *len, history_t *history)
+{
+    if (isatty(STDIN_FILENO))
+        return interactive_getline(line, len, history);
+    return clean_getline(line, len);
+}
+
+static int handle_noninteractive_line(char **line, char ***env, size_t *len)
+{
+    int status = handle_line(line, env);
+
+    if (is_exit_status(status))
+        return status;
+    *len = 0;
+    return 0;
+}
+
 int clean_getline(char **line, size_t *len)
 {
     ssize_t size = 0;
@@ -33,31 +105,26 @@ int clean_getline(char **line, size_t *len)
     return 0;
 }
 
-static int loop_step(char **line, size_t *len, char ***env)
+static int loop_step(char **line, size_t *len, char ***env, history_t *history)
 {
-    int status = clean_getline(line, len);
+    int status = 0;
 
+    status = read_next_line(line, len, history);
+    if (status == 1) {
+        free(*line);
+        *line = NULL;
+    }
     if (status == 1)
         return 0;
     if (status == -1 || *line == NULL)
         return 84;
-    status = handle_line(line, env);
-    if (is_exit_status(status))
+    if (isatty(STDIN_FILENO)) {
+        status = handle_interactive_line(line, env, history);
+        if (is_exit_status(status))
+            return status;
         return status;
-    *len = 0;
-    return 0;
-}
-
-static void print_prompt(void)
-{
-    if (isatty(STDIN_FILENO))
-        write(1, "$> ", 3);
-}
-
-static void print_exit_msg(void)
-{
-    if (isatty(STDIN_FILENO))
-        write(1, "exit\n", 5);
+    }
+    return handle_noninteractive_line(line, env, len);
 }
 
 static int handle_exit_status(int *exit_code)
@@ -65,7 +132,8 @@ static int handle_exit_status(int *exit_code)
     if (!is_exit_status(*exit_code))
         return 0;
     *exit_code = exit_status_code(*exit_code);
-    print_exit_msg();
+    if (isatty(STDIN_FILENO))
+        write(1, "exit\n", 5);
     return 1;
 }
 
@@ -74,17 +142,20 @@ int script_loop(char **env)
     int exit_code = 0;
     char *line = NULL;
     size_t len = 0;
+    history_t history = {0};
 
     if (env == NULL)
         return 84;
     signal(SIGINT, handle_sigint);
+    if (history_init(&history) == 84)
+        return 84;
     while (exit_code != 84) {
-        print_prompt();
-        exit_code = loop_step(&line, &len, &env);
+        exit_code = loop_step(&line, &len, &env, &history);
         if (handle_exit_status(&exit_code))
             break;
         if (exit_code == 84)
             break;
     }
+    history_destroy(&history);
     return final_exit_script_loop(exit_code, line, env);
 }
