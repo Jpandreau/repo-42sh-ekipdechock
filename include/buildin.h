@@ -15,6 +15,7 @@ char *expand_tilde_path(char *arg, char ***env);
 int run_buildin_args(char **args, char ***env);
 int cd_buildin_args(char **args, char ***env);
 int env_buildin_args(char **args, char **env);
+int history_buildin_args(char **args);
 int setenv_buildin_args(char **args, char ***env);
 int unsetenv_buildin_args(char **args, char ***env);
 int exit_buildin_args(char **args);
