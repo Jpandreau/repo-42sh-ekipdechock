@@ -29,23 +29,16 @@ static int exec_logic_or_nofork(tree_t *node, char ***env)
     return status;
 }
 
-static int exec_sequence_nofork(tree_t *node, char ***env)
-{
-    int left_status = exec_tree_nofork(node->left, env);
-
-    if (is_exit_status(left_status))
-        return left_status;
-    return exec_tree_nofork(node->right, env);
-}
-
 int exec_tree_nofork(tree_t *node, char ***env)
 {
     if (!node)
         return 0;
     if (prepare_tree_heredocs(node) != 0)
         return 84;
-    if (node->type == TOKEN_SEQUENCE)
-        return exec_sequence_nofork(node, env);
+    if (node->type == TOKEN_SEQUENCE) {
+        exec_tree_nofork(node->left, env);
+        return exec_tree_nofork(node->right, env);
+    }
     if (node->type == TOKEN_AND)
         return exec_logic_and_nofork(node, env);
     if (node->type == TOKEN_OR)

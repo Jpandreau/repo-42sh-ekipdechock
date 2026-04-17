@@ -91,7 +91,7 @@ static int wait_pipe_children(pipe_exec_ctx_t *ctx)
             last = status;
     }
     if (WIFSIGNALED(last))
-        return 128 + WTERMSIG(last);
+        return 1;
     return WEXITSTATUS(last);
 }
 
@@ -103,11 +103,8 @@ static int init_pipe_ctx(pipe_exec_ctx_t *ctx, tree_t *node, char ***env)
     ctx->env = env;
     ctx->spawned = 0;
     ctx->prev_read = -1;
-    if (ctx->cmds == NULL || ctx->pids == NULL) {
-        free(ctx->cmds);
-        free(ctx->pids);
+    if (ctx->cmds == NULL || ctx->pids == NULL)
         return 84;
-    }
     flatten_pipe_nodes(node, ctx->cmds, 0);
     return 0;
 }

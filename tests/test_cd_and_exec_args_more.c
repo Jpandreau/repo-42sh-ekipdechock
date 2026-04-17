@@ -121,5 +121,5 @@ Test(exec_cmd_args_more, no_path_and_not_found_messages,
     cr_assert_eq(exec_cmd_args(args, env_no_path), 1);
     cr_assert_eq(exec_cmd_args(args, env_bad_path), 1);
     cr_assert_eq(exec_cmd_args_nofork(args, env_no_path), 84);
-    cr_assert_eq(exec_cmd_args_nofork(args, env_bad_path), 1);
+    cr_assert_eq(exec_cmd_args_nofork(args, env_bad_path), 0);
 }

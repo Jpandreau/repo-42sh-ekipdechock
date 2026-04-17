@@ -13,11 +13,12 @@ void run(char *command, char **argument, char **env)
     int status;
 
     if (pid == -1)
-        exit(1);
+        return;
     if (pid == 0) {
         execve(command, argument, env);
-        exit(1);
+        return;
     } else {
         waitpid(pid, &status, 0);
     }
+    return;
 }

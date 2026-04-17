@@ -30,6 +30,10 @@ int run_line(char *input_line, char ***env, int *exit_code)
         return 0;
     *exit_code = exec_tree(tree, env);
     free_tree(tree);
+    if (*exit_code == 84) {
+        *exit_code = 0;
+        return 1;
+    }
     return 0;
 }
 
@@ -49,10 +53,7 @@ int read_content(int file, struct stat *st, char **content)
     *content = malloc(sizeof(char) * (st->st_size + 1));
     if (*content == NULL)
         return close_error(file);
-    if (read(file, *content, st->st_size) == -1) {
-        free(*content);
-        return close_error(file);
-    }
+    read(file, *content, st->st_size);
     (*content)[st->st_size] = '\0';
     close(file);
     return 0;

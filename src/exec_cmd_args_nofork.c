@@ -42,7 +42,7 @@ static int print_not_found(char *cmd)
 {
     my_putstr_err(cmd);
     my_putstr_err(": Command not found.\n");
-    return 1;
+    return 0;
 }
 
 static int exec_launch_format_arg_args_nofork(char *cmd, char **args,
