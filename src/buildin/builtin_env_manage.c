@@ -31,8 +31,6 @@ static int modification_env(char *key_with_equal,
     if (key_with_equal == NULL || value == NULL || env == NULL)
         return 84;
     key_size = my_strlen(key_with_equal);
-    if (key_with_equal == NULL)
-        return 84;
     for (int i = 0; (*env)[i] != NULL; i++) {
         if (my_strncmp(key_with_equal, (*env)[i], key_size) == 0)
             return change_value(env, i, key_with_equal, value);
