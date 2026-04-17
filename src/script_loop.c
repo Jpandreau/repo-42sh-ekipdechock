@@ -43,16 +43,16 @@ static int expand_and_store_history(char **line, history_t *history)
     char *expanded = NULL;
     int status = expand_sudo_history(*line, history, &expanded);
 
-    if (status == -1)
+    if (status == -1 && history != NULL && history->size > 0)
         status = history_expand_line(history, *line, &expanded);
+    if (status == -1)
+        expanded = my_strdup(*line);
     free(*line);
     *line = NULL;
-    if (status == 84)
+    if (status == 84 || expanded == NULL)
         return 84;
-    if (status == 1 || expanded == NULL)
-        return status == 1 ? 0 : 84;
     *line = expanded;
-    if ((*line)[0] != '\0' && history_add(history, *line) == 84) {
+    if (history_add(history, *line) == 84) {
         free(*line);
         *line = NULL;
         return 84;

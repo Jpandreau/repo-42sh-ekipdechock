@@ -50,23 +50,27 @@ int exec_logic_or(tree_t *node, char ***env, history_t *history)
     return status;
 }
 
+static int handle_sequence(tree_t *node, char ***env, history_t *history)
+{
+    int left = exec_tree(node->left, env, history);
+
+    return is_exit_status(left) ? left : exec_tree(node->right, env, history);
+}
+
 int exec_tree(tree_t *node, char ***env, history_t *history)
 {
     if (!node)
         return 0;
     if (prepare_tree_heredocs(node) != 0)
         return 84;
-    if (node->type == TOKEN_SEQUENCE) {
-        exec_tree(node->left, env, history);
-        return exec_tree(node->right, env, history);
-    }
+    if (node->type == TOKEN_SEQUENCE)
+        return handle_sequence(node, env, history);
     if (node->type == TOKEN_AND)
         return exec_logic_and(node, env, history);
     if (node->type == TOKEN_OR)
         return exec_logic_or(node, env, history);
     if (node->type == TOKEN_PIPE)
         return exec_pipe(node, env, history);
-    if (node->type == TOKEN_CMD)
-        return prepare_and_exec_cmd(node, env, history);
-    return 1;
+    return (node->type == TOKEN_CMD) ?
+        prepare_and_exec_cmd(node, env, history) : 1;
 }

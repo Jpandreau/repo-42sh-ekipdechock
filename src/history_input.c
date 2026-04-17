@@ -62,8 +62,11 @@ static int input_nav(struct input_state_s *state, int up)
         return 0;
     if (state->saved == NULL) {
         state->saved = my_strdup(state->buffer == NULL ? "" : state->buffer);
-        if (state->saved == NULL)
+        if (state->saved == NULL) {
+            free(state->buffer);
+            state->buffer = NULL;
             return 84;
+        }
     }
     if (up && state->browse_index > 0)
         state->browse_index--;
@@ -79,19 +82,17 @@ static int input_handle_escape(struct input_state_s *state)
     char seq[2] = {0};
     int status = 0;
 
-    if (read(STDIN_FILENO, &seq[0], 1) != 1)
-        return 0;
-    if (read(STDIN_FILENO, &seq[1], 1) != 1)
-        return 0;
-    if (seq[0] != '[')
+    if (read(STDIN_FILENO, &seq[0], 1) != 1
+        || read(STDIN_FILENO, &seq[1], 1) != 1 || seq[0] != '[')
         return 0;
     if (seq[1] == 'A')
         status = input_nav(state, 1);
-    if (seq[1] == 'B')
+    else if (seq[1] == 'B')
         status = input_nav(state, 0);
     if (status == 84)
         return 84;
-    if (state->browse_index >= state->history->size && state->saved != NULL) {
+    if (state->history != NULL && state->browse_index >= state->history->size
+        && state->saved != NULL) {
         free(state->saved);
         state->saved = NULL;
     }
