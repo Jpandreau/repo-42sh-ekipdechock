@@ -94,7 +94,7 @@ Test(exec_pipe_injected, success_last_exitstatus)
     g_fork_ret[1] = 222;
     g_wait_status[0] = 0;
     g_wait_status[1] = 0;
-    cr_assert_eq(tested_exec_pipe_injected(tree, &env), 0);
+    cr_assert_eq(tested_exec_pipe_injected(tree, &env, NULL), 0);
     free_tree(tree);
 }
 
@@ -109,7 +109,7 @@ Test(exec_pipe_injected, success_last_signaled)
     g_fork_ret[1] = 222;
     g_wait_status[0] = 0;
     g_wait_status[1] = SIGSEGV;
-    cr_assert_eq(tested_exec_pipe_injected(tree, &env), 1);
+    cr_assert_eq(tested_exec_pipe_injected(tree, &env, NULL), 1);
     free_tree(tree);
 }
 
@@ -122,7 +122,7 @@ Test(exec_pipe_injected, spawn_failure_triggers_cleanup)
     reset_pipe_mocks();
     g_fork_ret[0] = 111;
     g_fork_ret[1] = -1;
-    cr_assert_eq(tested_exec_pipe_injected(tree, &env), 84);
+    cr_assert_eq(tested_exec_pipe_injected(tree, &env, NULL), 84);
     cr_assert_eq(g_kill_calls, 1);
     free_tree(tree);
 }
@@ -135,6 +135,6 @@ Test(exec_pipe_injected, pipe_failure_returns_84)
 
     reset_pipe_mocks();
     g_pipe_ret[0] = -1;
-    cr_assert_eq(tested_exec_pipe_injected(tree, &env), 84);
+    cr_assert_eq(tested_exec_pipe_injected(tree, &env, NULL), 84);
     free_tree(tree);
 }

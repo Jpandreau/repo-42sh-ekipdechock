@@ -8,13 +8,16 @@
 #ifndef BUILDIN
     #define BUILDIN
 
+    #include "small_headers.h"
+
 int my_chdir(char *path, char ***env);
 int chdir_home(char ***env);
 char *expand_tilde_path(char *arg, char ***env);
 
-int run_buildin_args(char **args, char ***env);
+int run_buildin_args(char **args, char ***env, history_t *history);
 int cd_buildin_args(char **args, char ***env);
 int env_buildin_args(char **args, char **env);
+int history_buildin_args(char **args, history_t *history);
 int setenv_buildin_args(char **args, char ***env);
 int unsetenv_buildin_args(char **args, char ***env);
 int exit_buildin_args(char **args);

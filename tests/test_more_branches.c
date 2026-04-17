@@ -199,13 +199,16 @@ Test(script_helpers_more, init_exec_runs_tree)
 {
     char **env = malloc(sizeof(char *) * 2);
     char *line = my_strdup("env");
+    history_t history = {0};
 
     cr_assert_not_null(env);
     cr_assert_not_null(line);
     env[0] = my_strdup("PATH=/bin:/usr/bin");
     env[1] = NULL;
-    cr_assert_eq(init_exec(&line, &env), 0);
+    history_init(&history);
+    cr_assert_eq(init_exec(&line, &env, &history), 0);
     cr_assert_null(line);
+    history_destroy(&history);
     free_array(env);
 }
 

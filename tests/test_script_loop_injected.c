@@ -11,6 +11,7 @@
 #include <signal.h>
 #include "base.h"
 #include "tree.h"
+#include "small_headers.h"
 
 static int g_isatty = 0;
 static int g_write_calls = 0;
@@ -68,12 +69,61 @@ void (*mocked_signal(int signum, void (*handler)(int)))(int)
     return handler;
 }
 
-int mocked_handle_line(char **line, char ***env)
+int mocked_handle_line(char **line, char ***env, history_t *history)
 {
     (void)env;
+    (void)history;
     free(*line);
     *line = NULL;
     return g_handle_line_status;
+}
+
+int mocked_history_init(history_t *history)
+{
+    (void)history;
+    return 0;
+}
+
+void mocked_history_destroy(history_t *history)
+{
+    (void)history;
+}
+
+int mocked_history_add(history_t *history, char *line)
+{
+    (void)history;
+    (void)line;
+    return 0;
+}
+
+int mocked_history_expand_line(history_t *history, char *line, char **expanded)
+{
+    (void)history;
+    *expanded = my_strdup(line);
+    return *expanded == NULL ? 84 : 0;
+}
+
+int mocked_interactive_getline(char **line, size_t *len, history_t *history)
+{
+    ssize_t ret = g_getline_ret[g_getline_idx];
+    const char *txt = g_getline_txt[g_getline_idx];
+
+    (void)history;
+    g_getline_idx++;
+    if (ret == -1)
+        return -1;
+    if (ret == 1) {
+        *line = NULL;
+        return 1;
+    }
+    *line = malloc((size_t)ret + 1);
+    if (*line == NULL)
+        return 84;
+    memcpy(*line, txt, (size_t)ret);
+    (*line)[ret] = '\0';
+    if (len != NULL)
+        *len = (size_t)ret;
+    return 0;
 }
 
 #define final_exit_script_loop tested_final_exit_script_loop
@@ -85,7 +135,17 @@ int mocked_handle_line(char **line, char ***env)
 #define signal mocked_signal
 #define handle_sigint mocked_handle_sigint_stub
 #define handle_line mocked_handle_line
+#define history_init mocked_history_init
+#define history_destroy mocked_history_destroy
+#define history_add mocked_history_add
+#define history_expand_line mocked_history_expand_line
+#define interactive_getline mocked_interactive_getline
 #include "../src/script_loop.c"
+#undef interactive_getline
+#undef history_expand_line
+#undef history_add
+#undef history_destroy
+#undef history_init
 #undef handle_line
 #undef handle_sigint
 #undef signal
@@ -135,7 +195,8 @@ Test(script_loop_injected, script_loop_handles_exit_status_and_prints)
     g_getline_txt[0] = "x\n";
     g_handle_line_status = make_exit_status(7);
     cr_assert_eq(tested_script_loop(env), 7);
-    cr_assert_gt(g_write_calls, 1);
+    cr_assert_gt(g_write_calls, 0);
+    cr_assert_str_eq(g_last_write, "exit\n");
 }
 
 Test(script_loop_injected, script_loop_breaks_on_84)

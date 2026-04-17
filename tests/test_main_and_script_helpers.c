@@ -27,6 +27,16 @@ static char **make_heap_env_one(char *value)
     return env;
 }
 
+static history_t make_history_with_commands(char **commands)
+{
+    history_t history = {0};
+
+    history_init(&history);
+    for (int i = 0; commands[i] != NULL; i++)
+        history_add(&history, commands[i]);
+    return history;
+}
+
 Test(main_helpers, open_and_stat_missing_file)
 {
     struct stat st;
@@ -115,11 +125,14 @@ Test(script_loop_helpers, init_exec_null_tree_frees_line)
 {
     char **env = make_heap_env_one("PATH=/bin:/usr/bin");
     char *line = my_strdup(";");
+    history_t history = {0};
 
     cr_assert_not_null(env);
     cr_assert_not_null(line);
-    cr_assert_eq(init_exec(&line, &env), 0);
+    history_init(&history);
+    cr_assert_eq(init_exec(&line, &env, &history), 0);
     cr_assert_null(line);
+    history_destroy(&history);
     free_array(env);
 }
 
@@ -127,11 +140,14 @@ Test(script_loop_helpers, handle_line_exit_status)
 {
     char **env = make_heap_env_one("PATH=/bin:/usr/bin");
     char *line = my_strdup("exit 9");
+    history_t history = {0};
 
     cr_assert_not_null(env);
     cr_assert_not_null(line);
-    cr_assert_eq(handle_line(&line, &env), make_exit_status(9));
+    history_init(&history);
+    cr_assert_eq(handle_line(&line, &env, &history), make_exit_status(9));
     cr_assert_null(line);
+    history_destroy(&history);
     free_array(env);
 }
 
@@ -139,11 +155,14 @@ Test(script_loop_helpers, handle_line_exit_syntax_returns_0)
 {
     char **env = make_heap_env_one("PATH=/bin:/usr/bin");
     char *line = my_strdup("exit a");
+    history_t history = {0};
 
     cr_assert_not_null(env);
     cr_assert_not_null(line);
-    cr_assert_eq(handle_line(&line, &env), 0);
+    history_init(&history);
+    cr_assert_eq(handle_line(&line, &env, &history), 0);
     cr_assert_null(line);
+    history_destroy(&history);
     free_array(env);
 }
 
@@ -238,4 +257,199 @@ Test(script_loop, script_loop_handles_empty_line_then_exit)
     cr_assert_eq(script_loop(env), 0);
     dup2(saved_stdin, STDIN_FILENO);
     close(saved_stdin);
+}
+
+Test(history, expand_last_command)
+{
+    char *commands[] = {"echo first", "pwd", NULL};
+    history_t history = make_history_with_commands(commands);
+    char *expanded = NULL;
+
+    cr_assert_eq(history_expand_line(&history, "!!", &expanded), 0);
+    cr_assert_not_null(expanded);
+    cr_assert_str_eq(expanded, "pwd");
+    free(expanded);
+    history_destroy(&history);
+}
+
+Test(history, expand_by_number)
+{
+    char *commands[] = {"echo first", "pwd", "ls -la", NULL};
+    history_t history = make_history_with_commands(commands);
+    char *expanded = NULL;
+
+    cr_assert_eq(history_expand_line(&history, "!2", &expanded), 0);
+    cr_assert_not_null(expanded);
+    cr_assert_str_eq(expanded, "pwd");
+    free(expanded);
+    history_destroy(&history);
+}
+
+Test(history, expand_by_prefix)
+{
+    char *commands[] = {"git status", "git add .", "make test", NULL};
+    history_t history = make_history_with_commands(commands);
+    char *expanded = NULL;
+
+    cr_assert_eq(history_expand_line(&history, "!git", &expanded), 0);
+    cr_assert_not_null(expanded);
+    cr_assert_str_eq(expanded, "git add .");
+    free(expanded);
+    history_destroy(&history);
+}
+
+Test(history, expand_unknown_event_reports_error)
+{
+    char *commands[] = {"echo first", NULL};
+    history_t history = make_history_with_commands(commands);
+    char *expanded = NULL;
+
+    cr_assert_eq(history_expand_line(&history, "!missing", &expanded), 1);
+    cr_assert_null(expanded);
+    history_destroy(&history);
+}
+
+Test(history, expand_zero_reports_token_not_found,
+    .init = cr_redirect_stderr)
+{
+    char *commands[] = {"echo first", NULL};
+    history_t history = make_history_with_commands(commands);
+    char *expanded = NULL;
+
+    cr_assert_eq(history_expand_line(&history, "!0", &expanded), 1);
+    cr_assert_null(expanded);
+    cr_assert_stderr_eq_str("0: event not found\n");
+    history_destroy(&history);
+}
+
+Test(history, expand_negative_reports_token_not_found,
+    .init = cr_redirect_stderr)
+{
+    char *commands[] = {"echo first", NULL};
+    history_t history = make_history_with_commands(commands);
+    char *expanded = NULL;
+
+    cr_assert_eq(history_expand_line(&history, "!-1", &expanded), 1);
+    cr_assert_null(expanded);
+    cr_assert_stderr_eq_str("-1: event not found\n");
+    history_destroy(&history);
+}
+
+Test(history, expand_empty_bang_reports_generic_not_found,
+    .init = cr_redirect_stderr)
+{
+    char *commands[] = {"echo first", NULL};
+    history_t history = make_history_with_commands(commands);
+    char *expanded = NULL;
+
+    cr_assert_eq(history_expand_line(&history, "!", &expanded), 1);
+    cr_assert_null(expanded);
+    cr_assert_stderr_eq_str("history: event not found\n");
+    history_destroy(&history);
+}
+
+Test(history, expand_number_out_of_range_reports_not_found,
+    .init = cr_redirect_stderr)
+{
+    char *commands[] = {"echo first", NULL};
+    history_t history = make_history_with_commands(commands);
+    char *expanded = NULL;
+
+    cr_assert_eq(history_expand_line(&history, "!999", &expanded), 1);
+    cr_assert_null(expanded);
+    cr_assert_stderr_eq_str("999: event not found\n");
+    history_destroy(&history);
+}
+
+Test(history, expand_number_with_suffix_reports_not_found,
+    .init = cr_redirect_stderr)
+{
+    char *commands[] = {"echo first", "pwd", NULL};
+    history_t history = make_history_with_commands(commands);
+    char *expanded = NULL;
+
+    cr_assert_eq(history_expand_line(&history, "!2abc", &expanded), 1);
+    cr_assert_null(expanded);
+    cr_assert_stderr_eq_str("2abc: event not found\n");
+    history_destroy(&history);
+}
+
+Test(history, expand_prefix_with_trailing_spaces)
+{
+    char *commands[] = {"git status", "git add .", NULL};
+    history_t history = make_history_with_commands(commands);
+    char *expanded = NULL;
+
+    cr_assert_eq(history_expand_line(&history, "!git   ", &expanded), 0);
+    cr_assert_not_null(expanded);
+    cr_assert_str_eq(expanded, "git add .");
+    free(expanded);
+    history_destroy(&history);
+}
+
+Test(history, expand_non_bang_line_is_unchanged)
+{
+    history_t history = {0};
+    char *expanded = NULL;
+
+    history_init(&history);
+    cr_assert_eq(history_expand_line(&history, "echo hello", &expanded), 0);
+    cr_assert_not_null(expanded);
+    cr_assert_str_eq(expanded, "echo hello");
+    free(expanded);
+    history_destroy(&history);
+}
+
+Test(history, expand_with_leading_spaces_before_bang)
+{
+    char *commands[] = {"echo first", "pwd", NULL};
+    history_t history = make_history_with_commands(commands);
+    char *expanded = NULL;
+
+    cr_assert_eq(history_expand_line(&history, "   !2", &expanded), 0);
+    cr_assert_not_null(expanded);
+    cr_assert_str_eq(expanded, "pwd");
+    free(expanded);
+    history_destroy(&history);
+}
+
+Test(history, expand_prefix_picks_most_recent_match)
+{
+    char *commands[] = {"git status", "echo ok", "git add .", NULL};
+    history_t history = make_history_with_commands(commands);
+    char *expanded = NULL;
+
+    cr_assert_eq(history_expand_line(&history, "!git", &expanded), 0);
+    cr_assert_not_null(expanded);
+    cr_assert_str_eq(expanded, "git add .");
+    free(expanded);
+    history_destroy(&history);
+}
+
+Test(history, history_add_ignores_empty_line)
+{
+    history_t history = {0};
+    char *expanded = NULL;
+
+    history_init(&history);
+    cr_assert_eq(history_add(&history, ""), 0);
+    cr_assert_eq(history_add(&history, "pwd"), 0);
+    cr_assert_eq(history_expand_line(&history, "!!", &expanded), 0);
+    cr_assert_not_null(expanded);
+    cr_assert_str_eq(expanded, "pwd");
+    free(expanded);
+    history_destroy(&history);
+}
+
+Test(history, history_add_null_line_no_crash, .init = cr_redirect_stderr)
+{
+    history_t history = {0};
+    char *expanded = NULL;
+
+    history_init(&history);
+    cr_assert_eq(history_add(&history, NULL), 0);
+    cr_assert_eq(history_expand_line(&history, "!!", &expanded), 1);
+    cr_assert_null(expanded);
+    cr_assert_stderr_eq_str("!: event not found\n");
+    history_destroy(&history);
 }

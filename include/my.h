@@ -16,6 +16,7 @@
     #include <stdlib.h>
     #include <signal.h>
     #include <errno.h>
+    #include "small_headers.h"
 
 void run(char *command, char **argument, char **env);
 int exec_cmd(char *cmd, char *arg, char **env);
@@ -35,8 +36,8 @@ int my_execve(char *cmd, char *args[], char **env);
 int prepare_exec(char *cmd, char *arg, char *path, char **env);
 
 int buildin(char *line);
-int actions_cmd_args(char **args, char ***env);
-int actions_cmd_args_nofork(char **args, char ***env);
+int actions_cmd_args(char **args, char ***env, history_t *history);
+int actions_cmd_args_nofork(char **args, char ***env, history_t *history);
 int script_loop(char **env);
 
 int clean_getline(char **line, size_t *len);
