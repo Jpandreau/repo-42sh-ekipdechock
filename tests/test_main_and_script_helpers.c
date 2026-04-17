@@ -76,14 +76,14 @@ Test(main_helpers, run_line_invalid_tree_returns_0)
     free_array(env);
 }
 
-Test(main_helpers, run_line_error_84_becomes_stop)
+Test(main_helpers, run_line_error_84_preserved)
 {
     char **env = make_heap_env_one("PATH=/bin:/usr/bin");
     int exit_code = 0;
 
     cr_assert_not_null(env);
-    cr_assert_eq(run_line("unsetenv", &env, &exit_code), 1);
-    cr_assert_eq(exit_code, 0);
+    cr_assert_eq(run_line("unsetenv", &env, &exit_code), 0);
+    cr_assert_eq(exit_code, 84);
     free_array(env);
 }
 
