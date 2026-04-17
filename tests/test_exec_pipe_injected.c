@@ -109,7 +109,7 @@ Test(exec_pipe_injected, success_last_signaled)
     g_fork_ret[1] = 222;
     g_wait_status[0] = 0;
     g_wait_status[1] = SIGSEGV;
-    cr_assert_eq(tested_exec_pipe_injected(tree, &env), 1);
+    cr_assert_eq(tested_exec_pipe_injected(tree, &env), 128 + SIGSEGV);
     free_tree(tree);
 }
 

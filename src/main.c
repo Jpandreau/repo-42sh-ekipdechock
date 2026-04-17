@@ -32,8 +32,6 @@ int exec_all_cmd_file(char *content, char ***env)
 
     for (input_line = strtok(content, "\n"); input_line != NULL;
         input_line = strtok(NULL, "\n")) {
-        if (input_line[0] == '\n')
-            continue;
         if (run_line(input_line, env, &exit_code))
             break;
     }
