@@ -42,6 +42,16 @@ Test(buildin, recognize_history)
     cr_assert_eq(buildin("history"), 1);
 }
 
+Test(buildin, recognize_fg)
+{
+    cr_assert_eq(buildin("fg"), 1);
+}
+
+Test(buildin, recognize_bg)
+{
+    cr_assert_eq(buildin("bg"), 1);
+}
+
 Test(buildin, not_builtin_ls)
 {
     cr_assert_eq(buildin("ls"), 0);
