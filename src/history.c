@@ -44,6 +44,9 @@ int history_init(history_t *history)
     if (history == NULL)
         return 84;
     history_clear_entries(history);
+    history->job_pgid = 0;
+    history->job_active = 0;
+    history->job_stopped = 0;
     return 0;
 }
 
