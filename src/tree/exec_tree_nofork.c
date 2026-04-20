@@ -40,6 +40,18 @@ static int handle_sequence_nofork(tree_t *node, char ***env,
         left : exec_tree_nofork(node->right, env, history);
 }
 
+static int handle_background_nofork(tree_t *node, char ***env,
+    history_t *history)
+{
+    int left = exec_tree_nofork(node->left, env, history);
+
+    if (is_exit_status(left))
+        return left;
+    if (node->right == NULL)
+        return left;
+    return exec_tree_nofork(node->right, env, history);
+}
+
 int exec_tree_nofork(tree_t *node, char ***env, history_t *history)
 {
     if (!node)
@@ -48,6 +60,8 @@ int exec_tree_nofork(tree_t *node, char ***env, history_t *history)
         return 84;
     if (node->type == TOKEN_SEQUENCE)
         return handle_sequence_nofork(node, env, history);
+    if (node->type == TOKEN_BACKGROUND)
+        return handle_background_nofork(node, env, history);
     if (node->type == TOKEN_AND)
         return exec_logic_and_nofork(node, env, history);
     if (node->type == TOKEN_OR)
