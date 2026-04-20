@@ -53,6 +53,19 @@ Test(tokenize_line, operators_without_spaces)
     free_array(tokens);
 }
 
+Test(tokenize_line, background_operator_without_spaces)
+{
+    char **tokens = tokenize_line("sleep&echo ok");
+
+    cr_assert_not_null(tokens);
+    cr_assert_str_eq(tokens[0], "sleep");
+    cr_assert_str_eq(tokens[1], "&");
+    cr_assert_str_eq(tokens[2], "echo");
+    cr_assert_str_eq(tokens[3], "ok");
+    cr_assert_null(tokens[4]);
+    free_array(tokens);
+}
+
 Test(tokenize_line, unterminated_quote_returns_null)
 {
     char **tokens = tokenize_line("echo \"abc");
@@ -130,4 +143,32 @@ Test(parse_logic, get_logic_type_values)
     cr_assert_eq(get_logic_type("&&"), TOKEN_AND);
     cr_assert_eq(get_logic_type("||"), TOKEN_OR);
     cr_assert_eq(get_logic_type("xx"), TOKEN_CMD);
+}
+
+Test(parse_sequence, background_node_with_right)
+{
+    char *tokens[] = {"echo", "a", "&", "echo", "b", NULL};
+    int pos = 0;
+    tree_t *tree = parse_sequence(tokens, &pos);
+
+    cr_assert_not_null(tree);
+    cr_assert_eq(tree->type, TOKEN_BACKGROUND);
+    cr_assert_not_null(tree->left);
+    cr_assert_not_null(tree->right);
+    cr_assert_eq(pos, 5);
+    free_tree(tree);
+}
+
+Test(parse_sequence, trailing_background_operator_is_valid)
+{
+    char *tokens[] = {"echo", "a", "&", NULL};
+    int pos = 0;
+    tree_t *tree = parse_sequence(tokens, &pos);
+
+    cr_assert_not_null(tree);
+    cr_assert_eq(tree->type, TOKEN_BACKGROUND);
+    cr_assert_not_null(tree->left);
+    cr_assert_null(tree->right);
+    cr_assert_eq(pos, 3);
+    free_tree(tree);
 }
