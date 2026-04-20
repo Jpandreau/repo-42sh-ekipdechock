@@ -21,6 +21,8 @@ int history_buildin_args(char **args, history_t *history);
 int setenv_buildin_args(char **args, char ***env);
 int unsetenv_buildin_args(char **args, char ***env);
 int exit_buildin_args(char **args);
+int fg_buildin_args(char **args, history_t *history);
+int bg_buildin_args(char **args, history_t *history);
 
 char *my_getenv(char *key, char **env);
 
