@@ -57,6 +57,15 @@ static int handle_sequence(tree_t *node, char ***env, history_t *history)
     return is_exit_status(left) ? left : exec_tree(node->right, env, history);
 }
 
+static int handle_background(tree_t *node, char ***env, history_t *history)
+{
+    int status = exec_background(node->left, env, history);
+
+    if (status != 0 || node->right == NULL)
+        return status;
+    return exec_tree(node->right, env, history);
+}
+
 int exec_tree(tree_t *node, char ***env, history_t *history)
 {
     if (!node)
@@ -65,6 +74,8 @@ int exec_tree(tree_t *node, char ***env, history_t *history)
         return 84;
     if (node->type == TOKEN_SEQUENCE)
         return handle_sequence(node, env, history);
+    if (node->type == TOKEN_BACKGROUND)
+        return handle_background(node, env, history);
     if (node->type == TOKEN_AND)
         return exec_logic_and(node, env, history);
     if (node->type == TOKEN_OR)
