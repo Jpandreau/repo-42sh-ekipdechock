@@ -9,6 +9,7 @@
 #include "base.h"
 #include "tree.h"
 #include "small_headers.h"
+#include "job_control.h"
 
 int final_exit_script_loop(int exit_code, char *line, char **env)
 {
@@ -110,6 +111,7 @@ static int loop_step(char **line, size_t *len, char ***env, history_t *history)
 {
     int status = 0;
 
+    job_control_reap(history);
     status = read_next_line(line, len, history);
     if (status == 1) {
         free(*line);
