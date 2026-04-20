@@ -15,6 +15,7 @@ typedef enum {
     TOKEN_CMD,
     TOKEN_PIPE,
     TOKEN_SEQUENCE,
+    TOKEN_BACKGROUND,
     TOKEN_AND,
     TOKEN_OR,
     TOKEN_REDIR_LEFT,
@@ -57,6 +58,7 @@ tree_t *get_tree_token(char *line);
 int exec_tree(tree_t *node, char ***env, history_t *history);
 int exec_tree_nofork(tree_t *node, char ***env, history_t *history);
 int exec_pipe(tree_t *node, char ***env, history_t *history);
+int exec_background(tree_t *node, char ***env, history_t *history);
 int exec_cmd_node_nofork(tree_t *node, char ***env, history_t *history);
 int exec_cmd_with_redirections(tree_t *node, char ***env, history_t *history);
 int prepare_tree_heredocs(tree_t *node);
