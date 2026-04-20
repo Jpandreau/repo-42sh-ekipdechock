@@ -9,6 +9,7 @@
     #define SMALL_HEADERS
 
     #include <stddef.h>
+    #include <sys/types.h>
     #include <sys/stat.h>
 
 typedef struct tokenize_ctx_s {
@@ -24,6 +25,9 @@ typedef struct history_s {
     char **entries;
     int size;
     int capacity;
+    pid_t job_pgid;
+    int job_active;
+    int job_stopped;
 } history_t;
 
 char **tokenize_line(char *line);
@@ -47,9 +51,10 @@ char *history_expand_number(char *line, int idx, history_t *history);
 char *history_expand_prefix(char *line, int idx, history_t *history);
 char *history_resolve_bang(history_t *history, char *line, int idx);
 
-int run_line(char *input_line, char ***env, int *exit_code);
+int run_line(char *input_line, char ***env, int *exit_code, history_t *history);
 int open_and_stat(char *filename, struct stat *st);
 int read_content(int file, struct stat *st, char **content);
-int handle_pipe_line(char *input_line, char ***env, int *exit_code);
+int handle_pipe_line(char *input_line, char ***env, int *exit_code,
+    history_t *history);
 
 #endif /* SMALL_HEADERS */
