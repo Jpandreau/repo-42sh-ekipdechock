@@ -16,7 +16,7 @@ static int close_error(int file)
     return 84;
 }
 
-int run_line(char *input_line, char ***env, int *exit_code, history_t *history)
+int run_line(char *input_line, char ***env, int *exit_code, exec_ctx_t *ctx)
 {
     tree_t *tree = NULL;
     int code = 0;
@@ -28,7 +28,7 @@ int run_line(char *input_line, char ***env, int *exit_code, history_t *history)
     tree = get_tree_token(input_line);
     if (tree == NULL)
         return 0;
-    *exit_code = exec_tree(tree, env, history);
+    *exit_code = exec_tree(tree, env, ctx->history, ctx->job);
     free_tree(tree);
     if (*exit_code == 84) {
         *exit_code = 0;
@@ -68,7 +68,7 @@ static int prepare_pipe_line(char *input_line)
 }
 
 int handle_pipe_line(char *input_line, char ***env, int *exit_code,
-    history_t *history)
+    exec_ctx_t *ctx)
 {
     tree_t *tree = NULL;
     int code = 0;
@@ -82,7 +82,7 @@ int handle_pipe_line(char *input_line, char ***env, int *exit_code,
     tree = get_tree_token(input_line);
     if (tree == NULL)
         return 0;
-    *exit_code = exec_tree(tree, env, history);
+    *exit_code = exec_tree(tree, env, ctx->history, ctx->job);
     free_tree(tree);
     return 0;
 }

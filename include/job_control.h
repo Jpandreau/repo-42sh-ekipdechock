@@ -20,9 +20,10 @@ typedef struct job_state_s {
 } job_state_t;
 
 void job_control_init(void);
-void job_control_reap(history_t *history);
-int job_launch_background(tree_t *node, char ***env, history_t *history);
-int fg_buildin_args(char **args, history_t *history);
-int bg_buildin_args(char **args, history_t *history);
+void job_control_reap(job_state_t *job);
+int job_launch_background(tree_t *node, char ***env, history_t *history,
+    job_state_t *job);
+int fg_buildin_args(char **args, job_state_t *job);
+int bg_buildin_args(char **args, job_state_t *job);
 
 #endif /* !JOB_CONTROL_H */

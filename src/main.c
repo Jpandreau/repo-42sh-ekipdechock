@@ -31,6 +31,8 @@ int exec_all_cmd_file(char *content, char ***env)
     int exit_code = 0;
     char *input_line = NULL;
     history_t history = {0};
+    job_state_t job = {0};
+    exec_ctx_t ctx = {&history, &job};
 
     if (history_init(&history) == 84)
         return 84;
@@ -38,7 +40,7 @@ int exec_all_cmd_file(char *content, char ***env)
         input_line = strtok(NULL, "\n")) {
         if (input_line[0] == '\n')
             continue;
-        if (run_line(input_line, env, &exit_code, &history))
+        if (run_line(input_line, env, &exit_code, &ctx))
             break;
     }
     history_destroy(&history);
@@ -69,13 +71,15 @@ int pipe_input(char **env)
     size_t len = 0;
     int exit_code = 0;
     history_t history = {0};
+    job_state_t job = {0};
+    exec_ctx_t ctx = {&history, &job};
 
     if (history_init(&history) == 84) {
         free_array(env);
         return 84;
     }
     while (getline(&input_line, &len, stdin) != -1) {
-        if (handle_pipe_line(input_line, &env, &exit_code, &history))
+        if (handle_pipe_line(input_line, &env, &exit_code, &ctx))
             break;
     }
     history_destroy(&history);

@@ -31,7 +31,8 @@ int buildin(char *cmd)
     return 0;
 }
 
-int run_buildin_args(char **args, char ***env, history_t *history)
+int run_buildin_args(char **args, char ***env, history_t *history,
+    job_state_t *job)
 {
     if (args == NULL || args[0] == NULL || env == NULL)
         return 84;
@@ -48,8 +49,8 @@ int run_buildin_args(char **args, char ***env, history_t *history)
     if (!my_strcmp(args[0], "history"))
         return history_buildin_args(args, history);
     if (!my_strcmp(args[0], "fg"))
-        return fg_buildin_args(args, history);
+        return fg_buildin_args(args, job);
     if (!my_strcmp(args[0], "bg"))
-        return bg_buildin_args(args, history);
+        return bg_buildin_args(args, job);
     return 0;
 }

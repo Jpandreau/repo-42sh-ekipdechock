@@ -61,7 +61,8 @@ static int expand_and_store_history(char **line, history_t *history)
     return 0;
 }
 
-static int handle_interactive_line(char **line, char ***env, history_t *history)
+static int handle_interactive_line(char **line, char ***env, history_t *history,
+    job_state_t *job)
 {
     int status = expand_and_store_history(line, history);
 
@@ -69,7 +70,7 @@ static int handle_interactive_line(char **line, char ***env, history_t *history)
         return status;
     if (*line == NULL)
         return 0;
-    status = handle_line(line, env, history);
+    status = handle_line(line, env, history, job);
     return status;
 }
 
@@ -81,9 +82,9 @@ static int read_next_line(char **line, size_t *len, history_t *history)
 }
 
 static int handle_noninteractive_line(char **line, char ***env, size_t *len,
-    history_t *history)
+    exec_ctx_t *ctx)
 {
-    int status = handle_line(line, env, history);
+    int status = handle_line(line, env, ctx->history, ctx->job);
 
     if (is_exit_status(status))
         return status;
@@ -107,27 +108,26 @@ int clean_getline(char **line, size_t *len)
     return 0;
 }
 
-static int loop_step(char **line, size_t *len, char ***env, history_t *history)
+static int loop_step(char **line, size_t *len, char ***env, exec_ctx_t *ctx)
 {
     int status = 0;
 
-    job_control_reap(history);
-    status = read_next_line(line, len, history);
+    job_control_reap(ctx->job);
+    status = read_next_line(line, len, ctx->history);
     if (status == 1) {
         free(*line);
         *line = NULL;
-    }
-    if (status == 1)
         return 0;
+    }
     if (status == -1 || *line == NULL)
         return 84;
     if (isatty(STDIN_FILENO)) {
-        status = handle_interactive_line(line, env, history);
+        status = handle_interactive_line(line, env, ctx->history, ctx->job);
         if (is_exit_status(status))
             return status;
         return status;
     }
-    return handle_noninteractive_line(line, env, len, history);
+    return handle_noninteractive_line(line, env, len, ctx);
 }
 
 static int handle_exit_status(int *exit_code)
@@ -146,17 +146,14 @@ int script_loop(char **env)
     char *line = NULL;
     size_t len = 0;
     history_t history = {0};
+    job_state_t job = {0};
+    exec_ctx_t ctx = {&history, &job};
 
-    if (env == NULL)
-        return 84;
-    signal(SIGINT, handle_sigint);
-    if (history_init(&history) == 84)
+    if (env == NULL || history_init(&history) == 84)
         return 84;
     while (exit_code != 84) {
-        exit_code = loop_step(&line, &len, &env, &history);
+        exit_code = loop_step(&line, &len, &env, &ctx);
         if (handle_exit_status(&exit_code))
-            break;
-        if (exit_code == 84)
             break;
     }
     history_destroy(&history);
