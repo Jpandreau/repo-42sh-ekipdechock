@@ -112,13 +112,14 @@ static int apply_redirections_node(tree_t *node)
     return 0;
 }
 
-static int run_command_node(tree_t *node, char ***env, history_t *history)
+static int run_command_node(tree_t *node, char ***env, history_t *history,
+    job_state_t *job)
 {
     if (node->args == NULL || node->args[0] == NULL)
         return 0;
     if (buildin(node->args[0]))
-        return run_buildin_args(node->args, env, history);
-    return actions_cmd_args(node->args, env, history);
+        return run_buildin_args(node->args, env, history, job);
+    return actions_cmd_args(node->args, env, history, job);
 }
 
 static void restore_stdio(int saved_in, int saved_out)
@@ -129,7 +130,8 @@ static void restore_stdio(int saved_in, int saved_out)
     close(saved_out);
 }
 
-int exec_cmd_with_redirections(tree_t *node, char ***env, history_t *history)
+int exec_cmd_with_redirections(tree_t *node, char ***env, history_t *history,
+    job_state_t *job)
 {
     int saved_in = dup(STDIN_FILENO);
     int saved_out = dup(STDOUT_FILENO);
@@ -141,7 +143,7 @@ int exec_cmd_with_redirections(tree_t *node, char ***env, history_t *history)
         restore_stdio(saved_in, saved_out);
         return 1;
     }
-    status = run_command_node(node, env, history);
+    status = run_command_node(node, env, history, job);
     restore_stdio(saved_in, saved_out);
     return status;
 }

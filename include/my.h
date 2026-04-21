@@ -36,8 +36,10 @@ int my_execve(char *cmd, char *args[], char **env);
 int prepare_exec(char *cmd, char *arg, char *path, char **env);
 
 int buildin(char *line);
-int actions_cmd_args(char **args, char ***env, history_t *history);
-int actions_cmd_args_nofork(char **args, char ***env, history_t *history);
+int actions_cmd_args(char **args, char ***env, history_t *history,
+    job_state_t *job);
+int actions_cmd_args_nofork(char **args, char ***env, history_t *history,
+    job_state_t *job);
 int script_loop(char **env);
 
 int clean_getline(char **line, size_t *len);

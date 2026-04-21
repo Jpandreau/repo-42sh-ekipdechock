@@ -35,13 +35,14 @@ static int run_pipe_child_cmd(pipe_exec_ctx_t *ctx, int idx)
     int status = 0;
 
     if (cmd->input != NULL || cmd->output != NULL) {
-        status = exec_cmd_with_redirections(cmd, ctx->env, ctx->history);
+        status = exec_cmd_with_redirections(cmd, ctx->env, ctx->history,
+            ctx->job);
         exit(status);
     }
     if (cmd->args == NULL || cmd->args[0] == NULL)
         exit(0);
     if (buildin(cmd->args[0]))
-        exit(run_buildin_args(cmd->args, ctx->env, ctx->history));
+        exit(run_buildin_args(cmd->args, ctx->env, ctx->history, ctx->job));
     exit(exec_cmd_args_nofork(cmd->args, *ctx->env));
 }
 
@@ -123,13 +124,14 @@ static void cleanup_failed_pipe(pipe_exec_ctx_t *ctx)
         waitpid(ctx->pids[i], &status, 0);
 }
 
-int exec_pipe(tree_t *node, char ***env, history_t *history)
+int exec_pipe(tree_t *node, char ***env, history_t *history, job_state_t *job)
 {
     pipe_exec_ctx_t ctx;
     int ret = 0;
 
     if (init_pipe_ctx(&ctx, node, env, history) != 0)
         return 84;
+    ctx.job = job;
     for (int i = 0; i < ctx.count; i++) {
         if (spawn_pipe_child(&ctx, i) != 0) {
             cleanup_failed_pipe(&ctx);

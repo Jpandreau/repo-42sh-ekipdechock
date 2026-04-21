@@ -69,10 +69,12 @@ void (*mocked_signal(int signum, void (*handler)(int)))(int)
     return handler;
 }
 
-int mocked_handle_line(char **line, char ***env, history_t *history)
+int mocked_handle_line(char **line, char ***env, history_t *history,
+    job_state_t *job)
 {
     (void)env;
     (void)history;
+    (void)job;
     free(*line);
     *line = NULL;
     return g_handle_line_status;

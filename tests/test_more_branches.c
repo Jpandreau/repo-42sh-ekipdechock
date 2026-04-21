@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include "base.h"
 #include "buildin.h"
+#include "job_control.h"
 #include "my.h"
 #include "small_headers.h"
 #include "tree.h"
@@ -160,12 +161,17 @@ Test(main_helpers_more, handle_pipe_line_runs_tree)
     char **env = malloc(sizeof(char *) * 2);
     char line[] = "env\n";
     int exit_code = 0;
+    history_t history = {0};
+    job_state_t job = {0};
+    exec_ctx_t ctx = {&history, &job};
 
     cr_assert_not_null(env);
     env[0] = my_strdup("PATH=/bin:/usr/bin");
     env[1] = NULL;
-    cr_assert_eq(handle_pipe_line(line, &env, &exit_code), 0);
+    history_init(&history);
+    cr_assert_eq(handle_pipe_line(line, &env, &exit_code, &ctx), 0);
     cr_assert_eq(exit_code, 0);
+    history_destroy(&history);
     free_array(env);
 }
 
@@ -174,11 +180,16 @@ Test(main_helpers_more, handle_pipe_line_tree_null)
     char **env = malloc(sizeof(char *) * 2);
     char line[] = ";\n";
     int exit_code = 0;
+    history_t history = {0};
+    job_state_t job = {0};
+    exec_ctx_t ctx = {&history, &job};
 
     cr_assert_not_null(env);
     env[0] = my_strdup("PATH=/bin:/usr/bin");
     env[1] = NULL;
-    cr_assert_eq(handle_pipe_line(line, &env, &exit_code), 0);
+    history_init(&history);
+    cr_assert_eq(handle_pipe_line(line, &env, &exit_code, &ctx), 0);
+    history_destroy(&history);
     free_array(env);
 }
 
@@ -186,12 +197,17 @@ Test(main_helpers_more, run_line_exec_path_returns_0)
 {
     char **env = malloc(sizeof(char *) * 2);
     int exit_code = 0;
+    history_t history = {0};
+    job_state_t job = {0};
+    exec_ctx_t ctx = {&history, &job};
 
     cr_assert_not_null(env);
     env[0] = my_strdup("PATH=/bin:/usr/bin");
     env[1] = NULL;
-    cr_assert_eq(run_line("env", &env, &exit_code), 0);
+    history_init(&history);
+    cr_assert_eq(run_line("env", &env, &exit_code, &ctx), 0);
     cr_assert_eq(exit_code, 0);
+    history_destroy(&history);
     free_array(env);
 }
 
@@ -200,13 +216,14 @@ Test(script_helpers_more, init_exec_runs_tree)
     char **env = malloc(sizeof(char *) * 2);
     char *line = my_strdup("env");
     history_t history = {0};
+    job_state_t job = {0};
 
     cr_assert_not_null(env);
     cr_assert_not_null(line);
     env[0] = my_strdup("PATH=/bin:/usr/bin");
     env[1] = NULL;
     history_init(&history);
-    cr_assert_eq(init_exec(&line, &env, &history), 0);
+    cr_assert_eq(init_exec(&line, &env, &history, &job), 0);
     cr_assert_null(line);
     history_destroy(&history);
     free_array(env);

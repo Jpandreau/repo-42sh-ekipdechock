@@ -9,6 +9,7 @@
     #define SMALL_HEADERS
 
     #include <stddef.h>
+    #include <sys/types.h>
     #include <sys/stat.h>
 
 typedef struct tokenize_ctx_s {
@@ -33,8 +34,16 @@ int parse_exit_line(char *line, int *code);
 int exit_code_from_args(char **args, int *valid);
 int parse_exit_code_arg(char *str, int *ok);
 
-int init_exec(char **line, char ***env, history_t *history);
-int handle_line(char **line, char ***env, history_t *history);
+typedef struct job_state_s job_state_t;
+
+typedef struct exec_ctx_s {
+    history_t *history;
+    job_state_t *job;
+} exec_ctx_t;
+
+int init_exec(char **line, char ***env, history_t *history, job_state_t *job);
+int handle_line(char **line, char ***env, history_t *history,
+    job_state_t *job);
 
 int history_init(history_t *history);
 void history_destroy(history_t *history);
@@ -47,9 +56,10 @@ char *history_expand_number(char *line, int idx, history_t *history);
 char *history_expand_prefix(char *line, int idx, history_t *history);
 char *history_resolve_bang(history_t *history, char *line, int idx);
 
-int run_line(char *input_line, char ***env, int *exit_code);
+int run_line(char *input_line, char ***env, int *exit_code, exec_ctx_t *ctx);
 int open_and_stat(char *filename, struct stat *st);
 int read_content(int file, struct stat *st, char **content);
-int handle_pipe_line(char *input_line, char ***env, int *exit_code);
+int handle_pipe_line(char *input_line, char ***env, int *exit_code,
+    exec_ctx_t *ctx);
 
 #endif /* SMALL_HEADERS */

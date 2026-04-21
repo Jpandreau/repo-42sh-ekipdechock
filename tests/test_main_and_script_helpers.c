@@ -14,6 +14,7 @@
 #include "my.h"
 #include "base.h"
 #include "small_headers.h"
+#include "job_control.h"
 #include "tree.h"
 
 static char **make_heap_env_one(char *value)
@@ -68,10 +69,15 @@ Test(main_helpers, run_line_exit_builtin)
 {
     char **env = make_heap_env_one("PATH=/bin:/usr/bin");
     int exit_code = 0;
+    history_t history = {0};
+    job_state_t job = {0};
+    exec_ctx_t ctx = {&history, &job};
 
     cr_assert_not_null(env);
-    cr_assert_eq(run_line("exit 7", &env, &exit_code), 1);
+    history_init(&history);
+    cr_assert_eq(run_line("exit 7", &env, &exit_code, &ctx), 1);
     cr_assert_eq(exit_code, 7);
+    history_destroy(&history);
     free_array(env);
 }
 
@@ -79,10 +85,15 @@ Test(main_helpers, run_line_invalid_tree_returns_0)
 {
     char **env = make_heap_env_one("PATH=/bin:/usr/bin");
     int exit_code = 0;
+    history_t history = {0};
+    job_state_t job = {0};
+    exec_ctx_t ctx = {&history, &job};
 
     cr_assert_not_null(env);
-    cr_assert_eq(run_line(";", &env, &exit_code), 0);
+    history_init(&history);
+    cr_assert_eq(run_line(";", &env, &exit_code, &ctx), 0);
     cr_assert_eq(exit_code, 0);
+    history_destroy(&history);
     free_array(env);
 }
 
@@ -90,10 +101,15 @@ Test(main_helpers, run_line_error_84_becomes_stop)
 {
     char **env = make_heap_env_one("PATH=/bin:/usr/bin");
     int exit_code = 0;
+    history_t history = {0};
+    job_state_t job = {0};
+    exec_ctx_t ctx = {&history, &job};
 
     cr_assert_not_null(env);
-    cr_assert_eq(run_line("unsetenv", &env, &exit_code), 1);
+    history_init(&history);
+    cr_assert_eq(run_line("unsetenv", &env, &exit_code, &ctx), 1);
     cr_assert_eq(exit_code, 0);
+    history_destroy(&history);
     free_array(env);
 }
 
@@ -102,10 +118,15 @@ Test(main_helpers, handle_pipe_line_empty_line)
     char **env = make_heap_env_one("PATH=/bin:/usr/bin");
     int exit_code = 0;
     char input[] = "\n";
+    history_t history = {0};
+    job_state_t job = {0};
+    exec_ctx_t ctx = {&history, &job};
 
     cr_assert_not_null(env);
-    cr_assert_eq(handle_pipe_line(input, &env, &exit_code), 0);
+    history_init(&history);
+    cr_assert_eq(handle_pipe_line(input, &env, &exit_code, &ctx), 0);
     cr_assert_eq(exit_code, 0);
+    history_destroy(&history);
     free_array(env);
 }
 
@@ -114,10 +135,15 @@ Test(main_helpers, handle_pipe_line_exit)
     char **env = make_heap_env_one("PATH=/bin:/usr/bin");
     int exit_code = 0;
     char input[] = "exit 3\n";
+    history_t history = {0};
+    job_state_t job = {0};
+    exec_ctx_t ctx = {&history, &job};
 
     cr_assert_not_null(env);
-    cr_assert_eq(handle_pipe_line(input, &env, &exit_code), 1);
+    history_init(&history);
+    cr_assert_eq(handle_pipe_line(input, &env, &exit_code, &ctx), 1);
     cr_assert_eq(exit_code, 3);
+    history_destroy(&history);
     free_array(env);
 }
 
@@ -126,11 +152,12 @@ Test(script_loop_helpers, init_exec_null_tree_frees_line)
     char **env = make_heap_env_one("PATH=/bin:/usr/bin");
     char *line = my_strdup(";");
     history_t history = {0};
+    job_state_t job = {0};
 
     cr_assert_not_null(env);
     cr_assert_not_null(line);
     history_init(&history);
-    cr_assert_eq(init_exec(&line, &env, &history), 0);
+    cr_assert_eq(init_exec(&line, &env, &history, &job), 0);
     cr_assert_null(line);
     history_destroy(&history);
     free_array(env);
@@ -141,11 +168,12 @@ Test(script_loop_helpers, handle_line_exit_status)
     char **env = make_heap_env_one("PATH=/bin:/usr/bin");
     char *line = my_strdup("exit 9");
     history_t history = {0};
+    job_state_t job = {0};
 
     cr_assert_not_null(env);
     cr_assert_not_null(line);
     history_init(&history);
-    cr_assert_eq(handle_line(&line, &env, &history), make_exit_status(9));
+    cr_assert_eq(handle_line(&line, &env, &history, &job), make_exit_status(9));
     cr_assert_null(line);
     history_destroy(&history);
     free_array(env);
@@ -156,11 +184,12 @@ Test(script_loop_helpers, handle_line_exit_syntax_returns_0)
     char **env = make_heap_env_one("PATH=/bin:/usr/bin");
     char *line = my_strdup("exit a");
     history_t history = {0};
+    job_state_t job = {0};
 
     cr_assert_not_null(env);
     cr_assert_not_null(line);
     history_init(&history);
-    cr_assert_eq(handle_line(&line, &env, &history), 0);
+    cr_assert_eq(handle_line(&line, &env, &history, &job), 0);
     cr_assert_null(line);
     history_destroy(&history);
     free_array(env);

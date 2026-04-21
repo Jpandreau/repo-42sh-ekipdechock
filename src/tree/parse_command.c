@@ -16,6 +16,8 @@ static int is_control_token(char *token)
         return 1;
     if (my_strcmp(token, "||") == 0 || my_strcmp(token, ";") == 0)
         return 1;
+    if (my_strcmp(token, "&") == 0)
+        return 1;
     return 0;
 }
 
