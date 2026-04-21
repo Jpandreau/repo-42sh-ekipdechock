@@ -113,7 +113,7 @@ Test(tree_exec, sequence_with_redirections)
     unlink("/tmp/ms_tree_seq_in");
     unlink(out);
     cr_assert_not_null(tree);
-    cr_assert_eq(exec_tree(tree, &env_ptr, NULL), 0);
+    cr_assert_eq(exec_tree(tree, &env_ptr, NULL, NULL), 0);
     free_tree(tree);
     content = read_file_content(out);
     cr_assert_not_null(content);
@@ -133,7 +133,7 @@ Test(tree_exec, pipe_to_file)
 
     unlink(out);
     cr_assert_not_null(tree);
-    cr_assert_eq(exec_tree(tree, &env_ptr, NULL), 0);
+    cr_assert_eq(exec_tree(tree, &env_ptr, NULL, NULL), 0);
     free_tree(tree);
     content = read_file_content(out);
     cr_assert_not_null(content);
@@ -162,7 +162,7 @@ Test(tree_exec, heredoc_to_file)
     close(input_fd);
     tree = get_tree_token("cat << EOF > /tmp/ms_tree_hd_out");
     cr_assert_not_null(tree);
-    cr_assert_eq(exec_tree(tree, &env_ptr, NULL), 0);
+    cr_assert_eq(exec_tree(tree, &env_ptr, NULL, NULL), 0);
     free_tree(tree);
     dup2(saved_stdin, STDIN_FILENO);
     close(saved_stdin);
@@ -184,7 +184,7 @@ Test(tree_exec, append_twice_to_file)
 
     unlink(out);
     cr_assert_not_null(tree);
-    cr_assert_eq(exec_tree(tree, &env_ptr, NULL), 0);
+    cr_assert_eq(exec_tree(tree, &env_ptr, NULL, NULL), 0);
     free_tree(tree);
     content = read_file_content(out);
     cr_assert_not_null(content);
@@ -216,7 +216,7 @@ Test(tree_exec, heredoc_in_script_pipe_consumes_following_lines)
     line[size - 1] = '\0';
     tree = get_tree_token(line);
     cr_assert_not_null(tree);
-    cr_assert_eq(exec_tree(tree, &env_ptr, NULL), 0);
+    cr_assert_eq(exec_tree(tree, &env_ptr, NULL, NULL), 0);
     free_tree(tree);
     size = getline(&line, &len, stdin);
     dup2(saved_stdin, STDIN_FILENO);

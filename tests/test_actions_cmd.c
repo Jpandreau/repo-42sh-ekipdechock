@@ -13,7 +13,7 @@ Test(actions_cmd_args, null_args)
 {
     char **env = NULL;
 
-    cr_assert_eq(actions_cmd_args(NULL, &env, NULL), 84);
+    cr_assert_eq(actions_cmd_args(NULL, &env, NULL, NULL), 84);
 }
 
 Test(actions_cmd_args, null_command)
@@ -21,14 +21,14 @@ Test(actions_cmd_args, null_command)
     char **env = NULL;
     char *args[] = {NULL};
 
-    cr_assert_eq(actions_cmd_args(args, &env, NULL), 84);
+    cr_assert_eq(actions_cmd_args(args, &env, NULL, NULL), 84);
 }
 
 Test(actions_cmd_args_nofork, null_args)
 {
     char **env = NULL;
 
-    cr_assert_eq(actions_cmd_args_nofork(NULL, &env, NULL), 84);
+    cr_assert_eq(actions_cmd_args_nofork(NULL, &env, NULL, NULL), 84);
 }
 
 Test(actions_cmd_args_nofork, null_command)
@@ -36,7 +36,7 @@ Test(actions_cmd_args_nofork, null_command)
     char **env = NULL;
     char *args[] = {NULL};
 
-    cr_assert_eq(actions_cmd_args_nofork(args, &env, NULL), 84);
+    cr_assert_eq(actions_cmd_args_nofork(args, &env, NULL, NULL), 84);
 }
 
 Test(actions_cmd_args, builtin_env, .init = cr_redirect_stdout)
@@ -46,7 +46,7 @@ Test(actions_cmd_args, builtin_env, .init = cr_redirect_stdout)
     char *args[] = {"env", NULL};
     int ret;
 
-    ret = actions_cmd_args(args, &env_ptr, NULL);
+    ret = actions_cmd_args(args, &env_ptr, NULL, NULL);
     cr_assert_eq(ret, 0);
     fflush(stdout);
     cr_assert_stdout_eq_str("A=1\n");
@@ -59,7 +59,7 @@ Test(actions_cmd_args_nofork, builtin_env, .init = cr_redirect_stdout)
     char *args[] = {"env", NULL};
     int ret;
 
-    ret = actions_cmd_args_nofork(args, &env_ptr, NULL);
+    ret = actions_cmd_args_nofork(args, &env_ptr, NULL, NULL);
     cr_assert_eq(ret, 0);
     fflush(stdout);
     cr_assert_stdout_eq_str("B=2\n");
