@@ -9,6 +9,7 @@
 #include "base.h"
 #include "tree.h"
 #include "small_headers.h"
+#include "shell.h"
 
 int final_exit_script_loop(int exit_code, char *line, char **env)
 {
@@ -33,7 +34,7 @@ int clean_getline(char **line, size_t *len)
     return 0;
 }
 
-static int loop_step(char **line, size_t *len, char ***env)
+static int loop_step(char **line, size_t *len, shell_t *shell)
 {
     int status = clean_getline(line, len);
 
@@ -41,7 +42,7 @@ static int loop_step(char **line, size_t *len, char ***env)
         return 0;
     if (status == -1 || *line == NULL)
         return 84;
-    status = handle_line(line, env);
+    status = handle_line(line, &shell->env);
     if (is_exit_status(status))
         return status;
     *len = 0;
@@ -69,22 +70,39 @@ static int handle_exit_status(int *exit_code)
     return 1;
 }
 
+static int init_shell(shell_t *shell, char **env)
+{
+    if (env == NULL)
+        return 84;
+    shell->env = env;
+    shell->locals = malloc(sizeof(char *));
+    if (shell->locals == NULL)
+        return 84;
+    shell->locals[0] = NULL;
+    shell->aliases = NULL;
+    shell->exit_code = 0;
+    shell->running = 1;
+    return 0;
+}
+
 int script_loop(char **env)
 {
+    shell_t shell;
     int exit_code = 0;
     char *line = NULL;
     size_t len = 0;
 
-    if (env == NULL)
+    if (init_shell(&shell, env) != 0)
         return 84;
     signal(SIGINT, handle_sigint);
     while (exit_code != 84) {
         print_prompt();
-        exit_code = loop_step(&line, &len, &env);
+        exit_code = loop_step(&line, &len, &shell);
         if (handle_exit_status(&exit_code))
             break;
         if (exit_code == 84)
             break;
     }
-    return final_exit_script_loop(exit_code, line, env);
+    free_array(shell.locals);
+    return final_exit_script_loop(exit_code, line, shell.env);
 }
