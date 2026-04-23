@@ -9,6 +9,7 @@
 #include "base.h"
 #include "small_headers.h"
 #include "tree.h"
+#include "shell.h"
 
 static int close_error(int file)
 {
@@ -16,7 +17,7 @@ static int close_error(int file)
     return 84;
 }
 
-int run_line(char *input_line, char ***env, int *exit_code)
+int run_line(char *input_line, shell_t *shell, int *exit_code)
 {
     tree_t *tree = NULL;
     int code = 0;
@@ -28,7 +29,7 @@ int run_line(char *input_line, char ***env, int *exit_code)
     tree = get_tree_token(input_line);
     if (tree == NULL)
         return 0;
-    *exit_code = exec_tree(tree, env);
+    *exit_code = exec_tree(tree, shell);
     free_tree(tree);
     if (*exit_code == 84) {
         *exit_code = 0;
@@ -67,7 +68,7 @@ static int prepare_pipe_line(char *input_line)
     return 0;
 }
 
-int handle_pipe_line(char *input_line, char ***env, int *exit_code)
+int handle_pipe_line(char *input_line, shell_t *shell, int *exit_code)
 {
     tree_t *tree = NULL;
     int code = 0;
@@ -81,7 +82,7 @@ int handle_pipe_line(char *input_line, char ***env, int *exit_code)
     tree = get_tree_token(input_line);
     if (tree == NULL)
         return 0;
-    *exit_code = exec_tree(tree, env);
+    *exit_code = exec_tree(tree, shell);
     free_tree(tree);
     return 0;
 }
