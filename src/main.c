@@ -9,6 +9,7 @@
 #include "base.h"
 #include "small_headers.h"
 #include "buildin.h"
+#include "shell.h"
 
 static char **add_default_nlspath(char **env)
 {
@@ -25,18 +26,40 @@ static char **add_default_nlspath(char **env)
     return my_array_add(env, value);
 }
 
-int exec_all_cmd_file(char *content, char ***env)
+static int init_shell_env(shell_t *shell, char **env)
 {
+    shell->env = env;
+    shell->locals = malloc(sizeof(char *));
+    if (shell->locals == NULL)
+        return 84;
+    shell->locals[0] = NULL;
+    shell->aliases = malloc(sizeof(char *));
+    if (shell->aliases == NULL) {
+        free(shell->locals);
+        return 84;
+    }
+    shell->aliases[0] = NULL;
+    shell->exit_code = 0;
+    shell->running = 1;
+    return 0;
+}
+
+int exec_all_cmd_file(char *content, char **env)
+{
+    shell_t shell;
     int exit_code = 0;
     char *input_line = NULL;
 
+    if (init_shell_env(&shell, env) != 0)
+        return 84;
     for (input_line = strtok(content, "\n"); input_line != NULL;
         input_line = strtok(NULL, "\n")) {
         if (input_line[0] == '\n')
             continue;
-        if (run_line(input_line, env, &exit_code))
+        if (run_line(input_line, &shell, &exit_code))
             break;
     }
+    free_array(shell.locals);
     return exit_code;
 }
 
@@ -52,7 +75,7 @@ int command_file(char *filename, char **env)
         return 84;
     if (read_content(file, &st, &content) != 0)
         return 84;
-    exit_code = exec_all_cmd_file(content, &env);
+    exit_code = exec_all_cmd_file(content, env);
     free(content);
     free_array(env);
     return exit_code;
@@ -60,16 +83,20 @@ int command_file(char *filename, char **env)
 
 int pipe_input(char **env)
 {
+    shell_t shell;
     char *input_line = NULL;
     size_t len = 0;
     int exit_code = 0;
 
+    if (init_shell_env(&shell, env) != 0)
+        return 84;
     while (getline(&input_line, &len, stdin) != -1) {
-        if (handle_pipe_line(input_line, &env, &exit_code))
+        if (handle_pipe_line(input_line, &shell, &exit_code))
             break;
     }
     free(input_line);
-    free_array(env);
+    free_array(shell.locals);
+    free_array(shell.env);
     return exit_code;
 }
 
