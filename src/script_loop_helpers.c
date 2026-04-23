@@ -8,8 +8,9 @@
 #include "base.h"
 #include "tree.h"
 #include "small_headers.h"
+#include "shell.h"
 
-int init_exec(char **line, char ***env)
+int init_exec(char **line, shell_t *shell)
 {
     tree_t *tree = get_tree_token(*line);
     int status = 0;
@@ -17,13 +18,13 @@ int init_exec(char **line, char ***env)
     free(*line);
     *line = NULL;
     if (tree) {
-        status = exec_tree(tree, env);
+        status = exec_tree(tree, shell);
         free_tree(tree);
     }
     return status;
 }
 
-int handle_line(char **line, char ***env)
+int handle_line(char **line, shell_t *shell)
 {
     int code = 0;
     int status = parse_exit_line(*line, &code);
@@ -38,6 +39,6 @@ int handle_line(char **line, char ***env)
         *line = NULL;
         return 0;
     }
-    status = init_exec(line, env);
+    status = init_exec(line, shell);
     return status;
 }
