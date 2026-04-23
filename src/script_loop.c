@@ -42,7 +42,7 @@ static int loop_step(char **line, size_t *len, shell_t *shell)
         return 0;
     if (status == -1 || *line == NULL)
         return 84;
-    status = handle_line(line, &shell->env);
+    status = handle_line(line, shell);
     if (is_exit_status(status))
         return status;
     *len = 0;
@@ -79,7 +79,12 @@ static int init_shell(shell_t *shell, char **env)
     if (shell->locals == NULL)
         return 84;
     shell->locals[0] = NULL;
-    shell->aliases = NULL;
+    shell->aliases = malloc(sizeof(char *));
+    if (shell->aliases == NULL) {
+        free(shell->locals);
+        return 84;
+    }
+    shell->aliases[0] = NULL;
     shell->exit_code = 0;
     shell->running = 1;
     return 0;
@@ -104,5 +109,6 @@ int script_loop(char **env)
             break;
     }
     free_array(shell.locals);
+    free_array(shell.aliases);
     return final_exit_script_loop(exit_code, line, shell.env);
 }
