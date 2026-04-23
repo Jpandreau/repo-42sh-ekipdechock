@@ -9,6 +9,7 @@
 #include "my.h"
 #include "tree.h"
 #include "buildin.h"
+#include "shell.h"
 
 static void print_redirection_error(char *path)
 {
@@ -112,13 +113,15 @@ static int apply_redirections_node(tree_t *node)
     return 0;
 }
 
-static int run_command_node(tree_t *node, char ***env)
+static int run_command_node(tree_t *node, shell_t *shell)
 {
     if (node->args == NULL || node->args[0] == NULL)
         return 0;
+    if (split_buildin(node->args[0]))
+        return run_buildin_shell(node->args, shell);
     if (buildin(node->args[0]))
-        return run_buildin_args(node->args, env);
-    return actions_cmd_args(node->args, env);
+        return run_buildin_args(node->args, &shell->env);
+    return actions_cmd_args(node->args, shell);
 }
 
 static void restore_stdio(int saved_in, int saved_out)
@@ -129,7 +132,7 @@ static void restore_stdio(int saved_in, int saved_out)
     close(saved_out);
 }
 
-int exec_cmd_with_redirections(tree_t *node, char ***env)
+int exec_cmd_with_redirections(tree_t *node, shell_t *shell)
 {
     int saved_in = dup(STDIN_FILENO);
     int saved_out = dup(STDOUT_FILENO);
@@ -141,7 +144,7 @@ int exec_cmd_with_redirections(tree_t *node, char ***env)
         restore_stdio(saved_in, saved_out);
         return 1;
     }
-    status = run_command_node(node, env);
+    status = run_command_node(node, shell);
     restore_stdio(saved_in, saved_out);
     return status;
 }
