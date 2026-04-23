@@ -11,6 +11,8 @@
 
 static void display_aliases(char **aliases)
 {
+    if (aliases == NULL)
+        return;
     for (int i = 0; aliases[i] != NULL; i++) {
         my_putstr(aliases[i]);
         my_putchar('\n');
