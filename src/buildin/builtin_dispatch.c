@@ -9,7 +9,7 @@
 #include "buildin.h"
 #include "shell.h"
 
-static int split_buildin(char *cmd)
+int split_buildin(char *cmd)
 {
     if (cmd == NULL)
         return 0;
