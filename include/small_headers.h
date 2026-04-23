@@ -9,6 +9,7 @@
     #define SMALL_HEADERS
 
     #include <sys/stat.h>
+    #include "shell.h"
 
 typedef struct tokenize_ctx_s {
     int i;
@@ -26,12 +27,12 @@ int parse_exit_line(char *line, int *code);
 int exit_code_from_args(char **args, int *valid);
 int parse_exit_code_arg(char *str, int *ok);
 
-int init_exec(char **line, char ***env);
-int handle_line(char **line, char ***env);
+int init_exec(char **line, shell_t *shell);
+int handle_line(char **line, shell_t *shell);
 
-int run_line(char *input_line, char ***env, int *exit_code);
+int run_line(char *input_line, shell_t *shell, int *exit_code);
 int open_and_stat(char *filename, struct stat *st);
 int read_content(int file, struct stat *st, char **content);
-int handle_pipe_line(char *input_line, char ***env, int *exit_code);
+int handle_pipe_line(char *input_line, shell_t *shell, int *exit_code);
 
 #endif /* SMALL_HEADERS */

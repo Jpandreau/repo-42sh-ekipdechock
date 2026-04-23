@@ -9,6 +9,7 @@
     #define TREE
 
     #include <sys/types.h>
+    #include "shell.h"
 
 typedef enum {
     TOKEN_CMD,
@@ -41,7 +42,7 @@ typedef struct pipe_exec_ctx_s {
     int spawned;
     int prev_read;
     int fd_pipe[2];
-    char ***env;
+    shell_t *shell;
 } pipe_exec_ctx_t;
 
 tree_t *parse_sequence(char **tokens, int *pos);
@@ -52,11 +53,11 @@ tree_t *parse_command(char **tokens, int *pos);
 tree_t *new_node(tree_type_t type);
 tree_t *get_tree_token(char *line);
 
-int exec_tree(tree_t *node, char ***env);
-int exec_tree_nofork(tree_t *node, char ***env);
-int exec_pipe(tree_t *node, char ***env);
-int exec_cmd_node_nofork(tree_t *node, char ***env);
-int exec_cmd_with_redirections(tree_t *node, char ***env);
+int exec_tree(tree_t *node, shell_t *shell);
+int exec_tree_nofork(tree_t *node, shell_t *shell);
+int exec_pipe(tree_t *node, shell_t *shell);
+int exec_cmd_node_nofork(tree_t *node, shell_t *shell);
+int exec_cmd_with_redirections(tree_t *node, shell_t *shell);
 int prepare_tree_heredocs(tree_t *node);
 void free_tree(tree_t *node);
 

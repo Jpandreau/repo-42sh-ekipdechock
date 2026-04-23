@@ -12,6 +12,7 @@ int my_chdir(char *path, char ***env);
 int chdir_home(char ***env);
 char *expand_tilde_path(char *arg, char ***env);
 
+int split_buildin(char *cmd);
 int run_buildin_args(char **args, char ***env);
 int cd_buildin_args(char **args, char ***env);
 int env_buildin_args(char **args, char **env);
