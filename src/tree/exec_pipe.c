@@ -35,14 +35,16 @@ static int run_pipe_child_cmd(pipe_exec_ctx_t *ctx, int idx)
     int status = 0;
 
     if (cmd->input != NULL || cmd->output != NULL) {
-        status = exec_cmd_with_redirections(cmd, ctx->env);
+        status = exec_cmd_with_redirections(cmd, ctx->shell);
         exit(status);
     }
     if (cmd->args == NULL || cmd->args[0] == NULL)
         exit(0);
+    if (split_buildin(cmd->args[0]))
+        exit(run_buildin_shell(cmd->args, ctx->shell));
     if (buildin(cmd->args[0]))
-        exit(run_buildin_args(cmd->args, ctx->env));
-    exit(exec_cmd_args_nofork(cmd->args, *ctx->env));
+        exit(run_buildin_args(cmd->args, &ctx->shell->env));
+    exit(exec_cmd_args_nofork(cmd->args, ctx->shell->env));
 }
 
 static void setup_child_pipes(pipe_exec_ctx_t *ctx, int idx)
@@ -95,12 +97,12 @@ static int wait_pipe_children(pipe_exec_ctx_t *ctx)
     return WEXITSTATUS(last);
 }
 
-static int init_pipe_ctx(pipe_exec_ctx_t *ctx, tree_t *node, char ***env)
+static int init_pipe_ctx(pipe_exec_ctx_t *ctx, tree_t *node, shell_t *shell)
 {
     ctx->count = count_pipe_nodes(node);
     ctx->cmds = malloc(sizeof(tree_t *) * ctx->count);
     ctx->pids = malloc(sizeof(pid_t) * ctx->count);
-    ctx->env = env;
+    ctx->shell = shell;
     ctx->spawned = 0;
     ctx->prev_read = -1;
     if (ctx->cmds == NULL || ctx->pids == NULL)
@@ -121,12 +123,12 @@ static void cleanup_failed_pipe(pipe_exec_ctx_t *ctx)
         waitpid(ctx->pids[i], &status, 0);
 }
 
-int exec_pipe(tree_t *node, char ***env)
+int exec_pipe(tree_t *node, shell_t *shell)
 {
     pipe_exec_ctx_t ctx;
     int ret = 0;
 
-    if (init_pipe_ctx(&ctx, node, env) != 0)
+    if (init_pipe_ctx(&ctx, node, shell) != 0)
         return 84;
     for (int i = 0; i < ctx.count; i++) {
         if (spawn_pipe_child(&ctx, i) != 0) {
