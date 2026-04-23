@@ -33,6 +33,7 @@ static int find_local_index(char **locals, char *key)
         if (my_strncmp(locals[i], key, key_len) == 0
             && locals[i][key_len] == '=')
             return i;
+        i++;
     }
     return -1;
 }
@@ -100,10 +101,10 @@ int set_builtin_args(char **args, char ***locals)
     }
     if (size == 2)
         return set_local(locals, args[1], "");
-    if (size == 3 && my_strcmp(args[1], "=") == 0)
+    if (size == 3)
         return set_local(locals, args[1], args[2]);
-    if (size == 3 && my_strcmp(args[2], "=") != 0)
-        return set_local(locals, args[1], args[2]);
+    if (size == 4 && my_strcmp(args[2], "=") == 0)
+        return set_local(locals, args[1], args[3]);
     return 0;
 }
 
