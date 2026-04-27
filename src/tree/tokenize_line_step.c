@@ -12,7 +12,8 @@ static void consume_quote(char *line, tokenize_ctx_t *ctx)
 {
     if (line[ctx->i] == ctx->quote)
         ctx->in_quote = 0;
-    else {
+    else
+    {
         ctx->buf[ctx->len] = line[ctx->i];
         ctx->len++;
     }
@@ -62,7 +63,8 @@ static int handle_space(char *line, tokenize_ctx_t *ctx)
 
 static int is_operator_char(char c)
 {
-    return (c == '|' || c == '&' || c == '>' || c == '<' || c == ';');
+    return (c == '|' || c == '&' || c == '>' || c == '<' || c == ';' ||
+        c == '(' || c == ')');
 }
 
 static int handle_operator(char *line, tokenize_ctx_t *ctx)
@@ -76,25 +78,31 @@ static int handle_operator(char *line, tokenize_ctx_t *ctx)
     return 1;
 }
 
+static int handle_quote_start(char *line, tokenize_ctx_t *ctx)
+{
+    if (line[ctx->i] != '\'' && line[ctx->i] != '"' && line[ctx->i] != '`')
+        return 0;
+    ctx->in_quote = 1;
+    ctx->quote = line[ctx->i];
+    ctx->i++;
+    return 1;
+}
+
 int tokenize_step(char *line, tokenize_ctx_t *ctx)
 {
-    int res = 0;
+    int res;
 
     if (handle_in_quote(line, ctx))
         return 0;
     if (consume_escape(line, ctx))
         return 0;
-    if (line[ctx->i] == '\'' || line[ctx->i] == '"') {
-        ctx->in_quote = 1;
-        ctx->quote = line[ctx->i];
-        ctx->i++;
+    if (handle_quote_start(line, ctx))
         return 0;
-    }
     res = handle_space(line, ctx);
     if (res)
         return res < 0;
     res = handle_operator(line, ctx);
-    if (res)
+    if (res != 0)
         return res < 0;
     append_char(line, ctx);
     return 0;
