@@ -1,8 +1,8 @@
 /*
 ** EPITECH PROJECT, 2026
-** tokenize_extensions
+** 42sh
 ** File description:
-** Extended tokenizer features for globbing, inhibitors, and substitutions
+** Extended tokenizer features
 */
 
 #ifndef TOKENIZE_EXTENSIONS_H
@@ -10,8 +10,7 @@
 
     #include "small_headers.h"
 
-typedef enum
-{
+typedef enum {
     TOKEN_TYPE_WORD,
     TOKEN_TYPE_SINGLE_QUOTE,
     TOKEN_TYPE_DOUBLE_QUOTE,
@@ -24,13 +23,13 @@ typedef enum
     TOKEN_TYPE_SUBSHELL_CLOSE,
 } token_type_t;
 
-typedef struct token_s
-{
+typedef struct token_s {
     token_type_t type;
     char *value;
 } token_t;
 
 int is_inhibitor_char(char c, char quote);
 int is_glob_pattern(char *token);
+int expand_glob_pattern(char *pattern, char ***results);
 
 #endif
