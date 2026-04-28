@@ -1,14 +1,21 @@
 /*
 ** EPITECH PROJECT, 2026
-** exec_redirection
+** 42sh
 ** File description:
 ** execute command node with redirections
 */
 
+#include <errno.h>
+#include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h>
 #include "base.h"
-#include "my.h"
+#include "job_control.h"
 #include "tree.h"
 #include "buildin.h"
+#include "my.h"
+#include "expandargs.h"
 
 static void print_redirection_error(char *path)
 {
@@ -28,7 +35,7 @@ static int write_heredoc_content(int fd_write, char *delim)
         read_size = getline(&line, &len, stdin);
         if (read_size == -1)
             break;
-        if (read_size > 0 && line[read_size - 1] == '\n')
+        if (read_size > 0)
             line[read_size - 1] = '\0';
         if (my_strcmp(line, delim) == 0)
             break;
@@ -112,14 +119,23 @@ static int apply_redirections_node(tree_t *node)
     return 0;
 }
 
-static int run_command_node(tree_t *node, char ***env, history_t *history,
-    job_state_t *job)
+static int run_command_node(tree_t *node, char ***env,
+    history_t *history, job_state_t *job)
 {
+    char **expanded = NULL;
+    int status = 0;
+
     if (node->args == NULL || node->args[0] == NULL)
         return 0;
-    if (buildin(node->args[0]))
-        return run_buildin_args(node->args, env, history, job);
-    return actions_cmd_args(node->args, env, history, job);
+    expanded = expand_glob_args(node->args);
+    if (!expanded)
+        return 84;
+    if (buildin(expanded[0]))
+        status = run_buildin_args(expanded, env, history, job);
+    else
+        status = actions_cmd_args(expanded, env, history, job);
+    free_array(expanded);
+    return status;
 }
 
 static void restore_stdio(int saved_in, int saved_out)
@@ -130,8 +146,8 @@ static void restore_stdio(int saved_in, int saved_out)
     close(saved_out);
 }
 
-int exec_cmd_with_redirections(tree_t *node, char ***env, history_t *history,
-    job_state_t *job)
+int exec_cmd_with_redirections(tree_t *node, char ***env,
+    history_t *history, job_state_t *job)
 {
     int saved_in = dup(STDIN_FILENO);
     int saved_out = dup(STDOUT_FILENO);
