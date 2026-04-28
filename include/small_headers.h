@@ -68,7 +68,6 @@ void history_destroy(history_t *history);
 int history_add(history_t *history, char *line);
 int history_expand_line(history_t *history,
     char *line, char **expanded);
-
 int interactive_get_line(char **line,
     size_t *len, history_t *history);
 int history_skip_spaces(char *line);
