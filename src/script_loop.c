@@ -77,7 +77,7 @@ static int handle_interactive_line(char **line, char ***env, history_t *history,
 static int read_next_line(char **line, size_t *len, history_t *history)
 {
     if (isatty(STDIN_FILENO))
-        return interactive_getline(line, len, history);
+        return interactive_get_line(line, len, history);
     return clean_getline(line, len);
 }
 
