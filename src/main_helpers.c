@@ -16,14 +16,6 @@ static int close_error(int file)
     return 84;
 }
 
-static int prepare_pipe_line(char *input_line)
-{
-    if (input_line[0] == '\n')
-        return 1;
-    input_line[my_strlen(input_line) - 1] = '\0';
-    return 0;
-}
-
 int run_line(char *input_line, char ***env, int *exit_code, exec_ctx_t *ctx)
 {
     tree_t *tree = NULL;
@@ -64,6 +56,14 @@ int read_content(int file, struct stat *st, char **content)
     read(file, *content, st->st_size);
     (*content)[st->st_size] = '\0';
     close(file);
+    return 0;
+}
+
+static int prepare_pipe_line(char *input_line)
+{
+    if (input_line[0] == '\n')
+        return 1;
+    input_line[my_strlen(input_line) - 1] = '\0';
     return 0;
 }
 
