@@ -193,7 +193,7 @@ static int input_prepare_session(struct input_state_s *input,
     return 0;
 }
 
-int interactive_getline(char **line, size_t *len, history_t *history)
+int interactive_get_line(char **line, size_t *len, history_t *history)
 {
     struct term_state_s term = {0};
     struct input_state_s input = {0};
