@@ -79,7 +79,7 @@ int pipe_input(char **env)
         return 84;
     }
     while (getline(&input_line, &len, stdin) != -1) {
-        if (handle_pipe_line(input_line, &env, &exit_code, &ctx))
+        if (handle_pipeline(input_line, &env, &exit_code, &ctx))
             break;
     }
     history_destroy(&history);

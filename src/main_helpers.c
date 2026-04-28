@@ -67,7 +67,7 @@ static int prepare_pipe_line(char *input_line)
     return 0;
 }
 
-int handle_pipe_line(char *input_line, char ***env, int *exit_code,
+int handle_pipeline(char *input_line, char ***env, int *exit_code,
     exec_ctx_t *ctx)
 {
     tree_t *tree = NULL;
