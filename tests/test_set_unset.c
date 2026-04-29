@@ -18,8 +18,6 @@ static char **make_locals(void)
     return l;
 }
 
-/* ---- set_local ---- */
-
 Test(set_local, create_new)
 {
     char **locals = make_locals();
@@ -70,8 +68,6 @@ Test(set_local, empty_value)
     free(locals[0]);
     free(locals);
 }
-
-/* ---- get_local ---- */
 
 Test(get_local, find_existing)
 {
@@ -126,8 +122,6 @@ Test(get_local, find_second_entry)
     free(locals);
 }
 
-/* ---- unset_local ---- */
-
 Test(unset_local, remove_existing)
 {
     char **locals = make_locals();
@@ -159,8 +153,6 @@ Test(unset_local, keep_others_after_remove)
     free(locals[0]);
     free(locals);
 }
-
-/* ---- set_builtin_args ---- */
 
 Test(set_builtin_args, no_args_display_empty, .init = cr_redirect_stdout)
 {
@@ -198,8 +190,6 @@ Test(set_builtin_args, overwrite_variable)
     free(locals[0]);
     free(locals);
 }
-
-/* ---- unset_builtin_args ---- */
 
 Test(unset_builtin_args, too_few_args, .init = cr_redirect_stderr)
 {
