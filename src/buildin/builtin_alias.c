@@ -61,6 +61,7 @@ static int unalias_one(char ***aliases, char *key)
         (*aliases)[i] = (*aliases)[i + 1];
         i++;
     }
+    (*aliases)[i] = NULL;
     return 0;
 }
 
