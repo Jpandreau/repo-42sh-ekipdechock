@@ -27,4 +27,10 @@ int unalias_builtin_args(char **args, char ***aliases);
 int is_shell_builtin(char *cmd);
 int run_shell_builtin(char **args, shell_t *shell);
 
+int shell_init(shell_t *shell);
+void shell_destroy(shell_t *shell);
+
+char *expand_alias_in_line(char *line, char **aliases);
+char *expand_vars_in_line(char *line, char **locals, char **env);
+
 #endif
