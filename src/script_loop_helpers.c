@@ -43,15 +43,16 @@ int init_exec(char **line, char ***env, exec_ctx_t *ctx)
 {
     tree_t *tree = NULL;
     int status = 0;
+    int sb_status = 0;
 
     if (ctx->shell)
         apply_expansion(line, ctx->shell->aliases, ctx->shell->locals, *env);
     tree = get_tree_token(*line);
     free(*line);
     *line = NULL;
-    status = exec_shell_builtin(tree, ctx->shell);
-    if (status != -1)
-        return status;
+    sb_status = exec_shell_builtin(tree, ctx->shell);
+    if (sb_status != -1)
+        return sb_status;
     if (tree) {
         status = exec_tree(tree, env, ctx->history, ctx->job);
         free_tree(tree);
