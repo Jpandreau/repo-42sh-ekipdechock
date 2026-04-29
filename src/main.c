@@ -7,9 +7,16 @@
 
 #include "my.h"
 #include "base.h"
+#include "tree.h"
 #include "small_headers.h"
 #include "buildin.h"
 #include "job_control.h"
+
+static int pipe_input_fail(char **env)
+{
+    free_array(env);
+    return 84;
+}
 
 static char **add_default_nlspath(char **env)
 {
@@ -26,15 +33,38 @@ static char **add_default_nlspath(char **env)
     return my_array_add(env, value);
 }
 
+static void pipe_cleanup(char *line, char **env, history_t *hist,
+    shell_t *shell)
+{
+    history_destroy(hist);
+    shell_destroy(shell);
+    free(line);
+    free_array(env);
+}
+
+static int pipe_run_loop(char **line, size_t *len, char ***env,
+    exec_ctx_t *ctx)
+{
+    int status = 0;
+
+    while (clean_getline(line, len) != -1) {
+        status = handle_line(line, env, ctx);
+        if (is_exit_status(status))
+            return exit_status_code(status);
+    }
+    return 0;
+}
+
 int exec_all_cmd_file(char *content, char ***env)
 {
     int exit_code = 0;
     char *input_line = NULL;
     history_t history = {0};
     job_state_t job = {0};
-    exec_ctx_t ctx = {&history, &job};
+    shell_t shell = {NULL, NULL};
+    exec_ctx_t ctx = {&history, &job, &shell};
 
-    if (history_init(&history) == 84)
+    if (history_init(&history) == 84 || shell_init(&shell) == 84)
         return 84;
     for (input_line = strtok(content, "\n"); input_line != NULL;
         input_line = strtok(NULL, "\n")) {
@@ -44,6 +74,7 @@ int exec_all_cmd_file(char *content, char ***env)
             break;
     }
     history_destroy(&history);
+    shell_destroy(&shell);
     return exit_code;
 }
 
@@ -67,24 +98,18 @@ int command_file(char *filename, char **env)
 
 int pipe_input(char **env)
 {
-    char *input_line = NULL;
+    char *line = NULL;
     size_t len = 0;
     int exit_code = 0;
     history_t history = {0};
     job_state_t job = {0};
-    exec_ctx_t ctx = {&history, &job};
+    shell_t shell = {NULL, NULL};
+    exec_ctx_t ctx = {&history, &job, &shell};
 
-    if (history_init(&history) == 84) {
-        free_array(env);
-        return 84;
-    }
-    while (getline(&input_line, &len, stdin) != -1) {
-        if (handle_pipe_line(input_line, &env, &exit_code, &ctx))
-            break;
-    }
-    history_destroy(&history);
-    free(input_line);
-    free_array(env);
+    if (history_init(&history) == 84 || shell_init(&shell) == 84)
+        return pipe_input_fail(env);
+    exit_code = pipe_run_loop(&line, &len, &env, &ctx);
+    pipe_cleanup(line, env, &history, &shell);
     return exit_code;
 }
 
