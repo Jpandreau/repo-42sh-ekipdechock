@@ -163,7 +163,7 @@ Test(main_helpers_more, handle_pipe_line_runs_tree)
     int exit_code = 0;
     history_t history = {0};
     job_state_t job = {0};
-    exec_ctx_t ctx = {&history, &job};
+    exec_ctx_t ctx = {&history, &job, NULL};
 
     cr_assert_not_null(env);
     env[0] = my_strdup("PATH=/bin:/usr/bin");
@@ -182,7 +182,7 @@ Test(main_helpers_more, handle_pipe_line_tree_null)
     int exit_code = 0;
     history_t history = {0};
     job_state_t job = {0};
-    exec_ctx_t ctx = {&history, &job};
+    exec_ctx_t ctx = {&history, &job, NULL};
 
     cr_assert_not_null(env);
     env[0] = my_strdup("PATH=/bin:/usr/bin");
@@ -199,7 +199,7 @@ Test(main_helpers_more, run_line_exec_path_returns_0)
     int exit_code = 0;
     history_t history = {0};
     job_state_t job = {0};
-    exec_ctx_t ctx = {&history, &job};
+    exec_ctx_t ctx = {&history, &job, NULL};
 
     cr_assert_not_null(env);
     env[0] = my_strdup("PATH=/bin:/usr/bin");
@@ -217,13 +217,14 @@ Test(script_helpers_more, init_exec_runs_tree)
     char *line = my_strdup("env");
     history_t history = {0};
     job_state_t job = {0};
+    exec_ctx_t ctx = {&history, &job, NULL};
 
     cr_assert_not_null(env);
     cr_assert_not_null(line);
     env[0] = my_strdup("PATH=/bin:/usr/bin");
     env[1] = NULL;
     history_init(&history);
-    cr_assert_eq(init_exec(&line, &env, &history, &job), 0);
+    cr_assert_eq(init_exec(&line, &env, &ctx), 0);
     cr_assert_null(line);
     history_destroy(&history);
     free_array(env);
