@@ -92,17 +92,43 @@ int set_alias_entry(char ***aliases, char *key, char *value)
     return 0;
 }
 
+static int alias_set_from_token(char ***aliases, char *token)
+{
+    int eq = 0;
+    char *key = NULL;
+    int ret = 0;
+
+    while (token[eq] != '\0' && token[eq] != '=')
+        eq++;
+    if (token[eq] != '=')
+        return -1;
+    key = my_strndup(token, eq);
+    if (key == NULL)
+        return 84;
+    ret = set_alias_entry(aliases, key, token + eq + 1);
+    free(key);
+    return ret;
+}
+
 int alias_builtin_args(char **args, char ***aliases)
 {
     int size = array_size(args);
+    char *value = NULL;
+    int set_ret = 0;
 
     if (size == 1) {
         display_alias(*aliases);
         return 0;
     }
     if (size == 2) {
-        my_putstr(get_alias(*aliases, args[1]));
-        my_putchar('\n');
+        set_ret = alias_set_from_token(aliases, args[1]);
+        if (set_ret != -1)
+            return set_ret;
+        value = get_alias(*aliases, args[1]);
+        if (value != NULL) {
+            my_putstr(value);
+            my_putchar('\n');
+        }
         return 0;
     }
     return set_alias_entry(aliases, args[1], args[2]);
