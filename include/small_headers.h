@@ -45,6 +45,7 @@ typedef struct exec_ctx_s {
 
 int init_exec(char **line, char ***env, exec_ctx_t *ctx);
 int handle_line(char **line, char ***env, exec_ctx_t *ctx);
+int init_shell_ctx(history_t *history, shell_t *shell);
 
 int history_init(history_t *history);
 void history_destroy(history_t *history);
