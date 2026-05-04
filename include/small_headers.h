@@ -13,12 +13,6 @@
     #include <sys/stat.h>
     #include <shell.h>
 
-typedef struct history_s {
-    char **entries;
-    int size;
-    int capacity;
-} history_t;
-
 typedef struct tokenize_ctx_s {
     int i;
     int len;

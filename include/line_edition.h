@@ -29,8 +29,5 @@ int state_load(line_state_t *s, char *src);
 void state_free(line_state_t *s);
 void redraw_line(line_state_t *s);
 int read_loop(line_state_t *s);
-int interactive_getline(char **line, size_t *len, history_t *history);
-int history_add(history_t *h, char *line);
-void history_free(history_t *h);
 
 #endif /* LINE_EDITION_H */
