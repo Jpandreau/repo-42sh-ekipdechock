@@ -63,7 +63,7 @@ static int handle_space(char *line, tokenize_ctx_t *ctx)
 static int is_operator_char(char c)
 {
     return c == '|' || c == ';' || c == '&'
-        || c == '<' || c == '>' || c == '(';
+        || c == '<' || c == '>' || c == '(' || c == ')';
 }
 
 static int handle_operator(char *line, tokenize_ctx_t *ctx)
@@ -77,11 +77,22 @@ static int handle_operator(char *line, tokenize_ctx_t *ctx)
     return 1;
 }
 
+static token_type_t quote_to_type(char quote)
+{
+    if (quote == '\'')
+        return TOKEN_TYPE_SINGLE_QUOTE;
+    if (quote == '"')
+        return TOKEN_TYPE_DOUBLE_QUOTE;
+    return TOKEN_TYPE_BACKTICK;
+}
+
 static int handle_quote_start(char *line, tokenize_ctx_t *ctx)
 {
     if (line[ctx->i] != '\'' && line[ctx->i] != '"'
         && line[ctx->i] != '`')
         return 0;
+    if (ctx->len == 0)
+        ctx->cur_type = quote_to_type(line[ctx->i]);
     ctx->in_quote = 1;
     ctx->quote = line[ctx->i];
     ctx->i++;
