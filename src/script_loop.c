@@ -112,22 +112,25 @@ static int handle_exit_status(int *exit_code)
     return 1;
 }
 
-static int run_loop(int *exit_code, char **line, size_t *len,
-    char ***env, exec_ctx_t *ctx)
-{
-    while (*exit_code != 84) {
-        *exit_code = loop_step(line, len, env, ctx);
-        if (handle_exit_status(exit_code))
-            break;
-    }
-    return *exit_code;
-}
-
 int final_exit_script_loop(int exit_code, char *line, char **env)
 {
     free(line);
     free_array(env);
     return exit_code;
+}
+
+static int run_loop(char ***env, exec_ctx_t *ctx)
+{
+    int exit_code = 0;
+    char *line = NULL;
+    size_t len = 0;
+
+    while (exit_code != 84) {
+        exit_code = loop_step(&line, &len, env, ctx);
+        if (handle_exit_status(&exit_code))
+            break;
+    }
+    return final_exit_script_loop(exit_code, line, *env);
 }
 
 int clean_getline(char **line, size_t *len)
@@ -148,22 +151,20 @@ int clean_getline(char **line, size_t *len)
 
 int script_loop(char **env)
 {
-    int exit_code = 0;
-    char *line = NULL;
-    size_t len = 0;
     history_t history = {0};
     job_state_t job = {0};
     shell_t shell = {NULL, NULL};
     exec_ctx_t ctx = {&history, &job, &shell};
+    int ret = 0;
 
     if (env == NULL || init_shell_ctx(&history, &shell) == 84)
         return 84;
     if (isatty(STDIN_FILENO))
         line_editor_init();
-    run_loop(&exit_code, &line, &len, &env, &ctx);
+    ret = run_loop(&env, &ctx);
     if (isatty(STDIN_FILENO))
         line_editor_stop();
     history_destroy(&history);
     shell_destroy(&shell);
-    return final_exit_script_loop(exit_code, line, env);
+    return ret;
 }
