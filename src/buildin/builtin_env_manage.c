@@ -69,6 +69,19 @@ static int suppr_env(char *name, char ***env)
     return 0;
 }
 
+static int is_valid_env_name(char *name)
+{
+    int i = 0;
+
+    for (i = 0; name[i] != '\0' && name[i] != '='; i++) {
+        if ((name[i] < 'a' || name[i] > 'z') &&
+            (name[i] < 'A' || name[i] > 'Z') &&
+            (name[i] < '0' || name[i] > '9') && name[i] != '_')
+            return 0;
+    }
+    return i > 0;
+}
+
 static int setenv_with_equal_arg(char *arg, char ***env)
 {
     int equal_pos = -1;
@@ -103,6 +116,11 @@ int setenv_buildin_args(char **args, char ***env)
         return env_buildin_args(args, *env);
     if (size > 3) {
         my_putstr_err("setenv: Too many arguments.\n");
+        return 84;
+    }
+    if (!is_valid_env_name(args[1])) {
+        my_putstr_err("setenv: Variable name must contain");
+        my_putstr_err(" alphanumeric characters.\n");
         return 84;
     }
     if (size == 2)

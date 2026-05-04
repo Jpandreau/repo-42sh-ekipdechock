@@ -126,6 +126,11 @@ int mocked_interactive_getline(char **line, size_t *len, history_t *history)
     return 0;
 }
 
+static void mocked_line_editor_init(void) {}
+static void mocked_line_editor_stop(void) {}
+static void mocked_line_editor_suspend(void) {}
+static void mocked_line_editor_resume(void) {}
+
 #define final_exit_script_loop tested_final_exit_script_loop
 #define clean_getline tested_clean_getline
 #define script_loop tested_script_loop
@@ -140,7 +145,15 @@ int mocked_interactive_getline(char **line, size_t *len, history_t *history)
 #define history_add mocked_history_add
 #define history_expand_line mocked_history_expand_line
 #define interactive_getline mocked_interactive_getline
+#define line_editor_init mocked_line_editor_init
+#define line_editor_stop mocked_line_editor_stop
+#define line_editor_suspend mocked_line_editor_suspend
+#define line_editor_resume mocked_line_editor_resume
 #include "../src/script_loop.c"
+#undef line_editor_resume
+#undef line_editor_suspend
+#undef line_editor_stop
+#undef line_editor_init
 #undef interactive_getline
 #undef history_expand_line
 #undef history_add

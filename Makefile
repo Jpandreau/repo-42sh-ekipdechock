@@ -19,6 +19,7 @@ OBJ	=	$(patsubst $(STC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRC))
 DEPS	=	$(OBJ:.o=.d)
 
 FLAGS	=	-Wall -Wextra -W -Werror -MMD
+LIBS	=	-lncurses
 CRITERION	=	-lcriterion --coverage
 BUILD	=	42sh
 CRITERION_EXEC	=	unit_tests
@@ -26,7 +27,7 @@ CRITERION_EXEC	=	unit_tests
 all:	$(BUILD)
 
 $(BUILD):	$(OBJ)
-	$(CC) -o $(BUILD) $(OBJ) $(FLAGS) $(INC_DIR)
+	$(CC) -o $(BUILD) $(OBJ) $(FLAGS) $(LIBS) $(INC_DIR)
 
 -include $(DEPS)
 
@@ -43,7 +44,7 @@ fclean:	clean
 re:	fclean all
 
 tests_run: $(BUILD) tests_clean
-	$(CC_TESTS) -o $(CRITERION_EXEC) $(SRC_NO_MAIN) $(TESTS_SRC) $(CRITERION) $(FLAGS) $(INC_DIR)
+	$(CC_TESTS) -o $(CRITERION_EXEC) $(SRC_NO_MAIN) $(TESTS_SRC) $(CRITERION) $(FLAGS) $(LIBS) $(INC_DIR)
 	./$(CRITERION_EXEC)
 
 tests_clean:
