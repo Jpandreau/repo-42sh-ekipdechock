@@ -47,8 +47,7 @@ static int mark_stopped_job(job_state_t *state, job_state_t *job)
     return 148;
 }
 
-static void run_background_child(tree_t *node, char ***env, history_t *history,
-    job_state_t *job)
+static void run_background_child(tree_t *node, char ***env, exec_ctx_t *ctx)
 {
     int status = 0;
 
@@ -56,7 +55,7 @@ static void run_background_child(tree_t *node, char ***env, history_t *history,
     signal(SIGINT, SIG_DFL);
     signal(SIGTSTP, SIG_DFL);
     signal(SIGQUIT, SIG_DFL);
-    status = exec_tree_nofork(node, env, history, job);
+    status = exec_tree_nofork(node, env, ctx);
     exit(status);
 }
 
@@ -105,8 +104,7 @@ void job_control_reap(job_state_t *job)
     write_job_state(&state, job);
 }
 
-int job_launch_background(tree_t *node, char ***env, history_t *history,
-    job_state_t *job)
+int job_launch_background(tree_t *node, char ***env, exec_ctx_t *ctx)
 {
     pid_t pid = fork();
     job_state_t state = {0};
@@ -114,12 +112,12 @@ int job_launch_background(tree_t *node, char ***env, history_t *history,
     if (pid == -1)
         return 84;
     if (pid == 0)
-        run_background_child(node, env, history, job);
+        run_background_child(node, env, ctx);
     setpgid(pid, pid);
     state.pgid = pid;
     state.active = 1;
     state.stopped = 0;
-    write_job_state(&state, job);
+    write_job_state(&state, ctx->job);
     printf("[1] %d\n", (int)pid);
     return 0;
 }
