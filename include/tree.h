@@ -34,6 +34,7 @@ typedef struct tree_s {
     int heredoc;
     int heredoc_fd;
     char **args;
+    token_type_t *arg_types;
 } tree_t;
 
 typedef struct pipe_exec_ctx_s {
