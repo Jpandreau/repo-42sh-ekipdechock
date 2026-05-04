@@ -12,13 +12,32 @@
     #include <sys/types.h>
     #include <sys/stat.h>
 
+typedef enum {
+    TOKEN_TYPE_WORD,
+    TOKEN_TYPE_SINGLE_QUOTE,
+    TOKEN_TYPE_DOUBLE_QUOTE,
+    TOKEN_TYPE_BACKTICK,
+    TOKEN_TYPE_GLOB_STAR,
+    TOKEN_TYPE_GLOB_QUESTION,
+    TOKEN_TYPE_GLOB_BRACKET,
+    TOKEN_TYPE_OPERATOR,
+    TOKEN_TYPE_SUBSHELL_OPEN,
+    TOKEN_TYPE_SUBSHELL_CLOSE,
+} token_type_t;
+
+typedef struct token_s {
+    token_type_t type;
+    char *value;
+} token_t;
+
 typedef struct tokenize_ctx_s {
     int i;
     int len;
     int in_quote;
     char quote;
     char *buf;
-    char **tokens;
+    token_t **tokens;
+    token_type_t cur_type;
 } tokenize_ctx_t;
 
 typedef struct history_s {
@@ -34,7 +53,7 @@ typedef struct exec_ctx_s {
     job_state_t *job;
 } exec_ctx_t;
 
-char **tokenize_line(char *line);
+token_t **tokenize_line(char *line);
 int tokenize_step(char *line, tokenize_ctx_t *ctx);
 int parse_exit_line(char *line, int *code);
 int exit_code_from_args(char **args, int *valid);
@@ -48,6 +67,7 @@ void history_destroy(history_t *history);
 int history_add(history_t *history, char *line);
 int history_expand_line(history_t *history,
     char *line, char **expanded);
+
 int interactive_get_line(char **line,
     size_t *len, history_t *history);
 int history_skip_spaces(char *line);
