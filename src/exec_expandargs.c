@@ -45,3 +45,41 @@ char **expand_glob_args(char **args)
     }
     return result;
 }
+
+static char **add_backtick_result(char **result, char **words)
+{
+    char **tmp = NULL;
+    int i = 0;
+
+    while (words && words[i]) {
+        tmp = my_array_add(result, my_strdup(words[i]));
+        if (tmp)
+            result = tmp;
+        i++;
+    }
+    return result;
+}
+
+char **expand_backtick_args(char **args, token_type_t *arg_types, char ***env)
+{
+    char **result = malloc(sizeof(char *) * 1);
+    char **words = NULL;
+    int i = 0;
+
+    if (!result)
+        return NULL;
+    result[0] = NULL;
+    while (args[i]) {
+        if (arg_types && arg_types[i] == TOKEN_TYPE_BACKTICK) {
+            words = expand_backtick(args[i], env);
+            result = add_backtick_result(result, words);
+            free_array(words);
+        } else {
+            result = my_array_add(result, my_strdup(args[i]));
+        }
+        if (!result)
+            return NULL;
+        i++;
+    }
+    return result;
+}
