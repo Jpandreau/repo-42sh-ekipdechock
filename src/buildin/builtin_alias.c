@@ -78,6 +78,7 @@ int set_alias_entry(char ***aliases, char *key, char *value)
 {
     char *entry = build_alias_entry(key, value);
     int i = find_alias_index(*aliases, key);
+    char **new_aliases = NULL;
 
     if (entry == NULL)
         return 84;
@@ -86,9 +87,12 @@ int set_alias_entry(char ***aliases, char *key, char *value)
         (*aliases)[i] = entry;
         return 0;
     }
-    *aliases = my_array_add(*aliases, entry);
-    if (*aliases == NULL)
+    new_aliases = my_array_add(*aliases, entry);
+    if (new_aliases == NULL) {
+        free(entry);
         return 84;
+    }
+    *aliases = new_aliases;
     return 0;
 }
 

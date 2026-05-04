@@ -63,6 +63,7 @@ int set_local(char ***locals, char *key, char *value)
 {
     int i = find_local_index(*locals, key);
     char *entry = build_entry(key, value);
+    char **new_locals = NULL;
 
     if (entry == NULL)
         return 84;
@@ -71,9 +72,12 @@ int set_local(char ***locals, char *key, char *value)
         (*locals)[i] = entry;
         return 0;
     }
-    *locals = my_array_add(*locals, entry);
-    if (*locals == NULL)
+    new_locals = my_array_add(*locals, entry);
+    if (new_locals == NULL) {
+        free(entry);
         return 84;
+    }
+    *locals = new_locals;
     return 0;
 }
 
