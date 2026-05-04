@@ -40,7 +40,28 @@ static char **init_args(void)
     return args;
 }
 
-static int add_arg(tree_t *node, char *token)
+static int update_arg_types(tree_t *node, token_type_t type)
+{
+    int size = array_size(node->args);
+    token_type_t *new_types = malloc(sizeof(token_type_t) * size);
+    int i = 0;
+
+    if (new_types == NULL)
+        return 1;
+    while (i < size - 1) {
+        if (node->arg_types != NULL)
+            new_types[i] = node->arg_types[i];
+        else
+            new_types[i] = TOKEN_TYPE_WORD;
+        i++;
+    }
+    new_types[size - 1] = type;
+    free(node->arg_types);
+    node->arg_types = new_types;
+    return 0;
+}
+
+static int add_arg_with_type(tree_t *node, char *token, token_type_t type)
 {
     char *dup = my_strdup(token);
     char **tmp = NULL;
@@ -53,6 +74,8 @@ static int add_arg(tree_t *node, char *token)
         return 1;
     }
     node->args = tmp;
+    if (update_arg_types(node, type) != 0)
+        return 1;
     return 0;
 }
 
@@ -95,7 +118,7 @@ static int consume_command_token(tree_t *node, token_t **tokens, int *pos)
         (*pos)++;
         return 0;
     }
-    if (add_arg(node, tokens[*pos]->value) != 0)
+    if (add_arg_with_type(node, tokens[*pos]->value, tokens[*pos]->type) != 0)
         return 1;
     (*pos)++;
     return 0;
