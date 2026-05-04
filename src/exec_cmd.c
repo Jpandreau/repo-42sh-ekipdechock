@@ -9,21 +9,33 @@
 #include "base.h"
 #include "buildin.h"
 
+static int cmd_is_path(char *cmd)
+{
+    int i = 0;
+
+    if (cmd[0] == '/' || cmd[0] == '.')
+        return 1;
+    for (i = 0; cmd[i] != '\0'; i++)
+        if (cmd[i] == '/')
+            return 1;
+    return 0;
+}
+
 int check_cmd(char *cmd_path)
 {
     if (cmd_path == NULL)
         return 84;
-    if (cmd_path[0] == '/' || cmd_path[0] == '.') {
-        if (access(cmd_path, F_OK) == -1) {
-            my_putstr_err(cmd_path);
-            my_putstr_err(": Command not found.\n");
-            return 84;
-        }
-        if (access(cmd_path, X_OK) == -1) {
-            my_putstr_err(cmd_path);
-            my_putstr_err(": Permission denied.\n");
-            return 84;
-        }
+    if (!cmd_is_path(cmd_path))
+        return 0;
+    if (access(cmd_path, F_OK) == -1) {
+        my_putstr_err(cmd_path);
+        my_putstr_err(": Command not found.\n");
+        return 84;
+    }
+    if (access(cmd_path, X_OK) == -1) {
+        my_putstr_err(cmd_path);
+        my_putstr_err(": Permission denied.\n");
+        return 84;
     }
     return 0;
 }
@@ -86,7 +98,7 @@ int exec_cmd(char *cmd, char *arg, char **env)
         return 84;
     if (check_cmd(cmd) != 0)
         return 1;
-    if (cmd[0] == '/' || cmd[0] == '.')
+    if (cmd_is_path(cmd))
         return exec_launch_format_arg(cmd, arg, env);
     return exec_path_env(cmd, arg, env);
 }
