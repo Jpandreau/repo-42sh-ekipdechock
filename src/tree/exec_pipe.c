@@ -9,6 +9,7 @@
 #include "tree.h"
 #include "my.h"
 #include "buildin.h"
+#include "shell.h"
 
 static int count_pipe_nodes(tree_t *node)
 {
@@ -29,66 +30,72 @@ static int flatten_pipe_nodes(tree_t *node, tree_t **cmds, int idx)
     return flatten_pipe_nodes(node->right, cmds, idx);
 }
 
-static int run_pipe_child_cmd(pipe_exec_ctx_t *ctx, int idx)
+static int run_pipe_child_cmd(pipe_exec_ctx_t *pctx, int idx)
 {
-    tree_t *cmd = ctx->cmds[idx];
+    tree_t *cmd = pctx->cmds[idx];
     int status = 0;
 
     if (cmd->input != NULL || cmd->output != NULL) {
-        status = exec_cmd_with_redirections(cmd, ctx->env, ctx->history,
-            ctx->job);
+        status = exec_cmd_with_redirections(cmd, pctx->env, pctx->ctx);
         exit(status);
     }
     if (cmd->args == NULL || cmd->args[0] == NULL)
         exit(0);
-    if (buildin(cmd->args[0]))
-        exit(run_buildin_args(cmd->args, ctx->env, ctx->history, ctx->job));
-    exit(exec_cmd_args_nofork(cmd->args, *ctx->env));
+    if (pctx->ctx != NULL && pctx->ctx->shell != NULL
+        && is_shell_builtin(cmd->args[0]))
+        exit(run_shell_builtin(cmd->args, pctx->ctx->shell));
+    if (buildin(cmd->args[0])) {
+        status = run_buildin_args(cmd->args, pctx->env,
+            pctx->ctx ? pctx->ctx->history : NULL,
+            pctx->ctx ? pctx->ctx->job : NULL);
+        exit(status);
+    }
+    exit(exec_cmd_args_nofork(cmd->args, *pctx->env));
 }
 
-static void setup_child_pipes(pipe_exec_ctx_t *ctx, int idx)
+static void setup_child_pipes(pipe_exec_ctx_t *pctx, int idx)
 {
-    if (ctx->prev_read != -1)
-        dup2(ctx->prev_read, STDIN_FILENO);
-    if (idx < ctx->count - 1)
-        dup2(ctx->fd_pipe[1], STDOUT_FILENO);
-    if (ctx->prev_read != -1)
-        close(ctx->prev_read);
-    if (idx < ctx->count - 1) {
-        close(ctx->fd_pipe[0]);
-        close(ctx->fd_pipe[1]);
+    if (pctx->prev_read != -1)
+        dup2(pctx->prev_read, STDIN_FILENO);
+    if (idx < pctx->count - 1)
+        dup2(pctx->fd_pipe[1], STDOUT_FILENO);
+    if (pctx->prev_read != -1)
+        close(pctx->prev_read);
+    if (idx < pctx->count - 1) {
+        close(pctx->fd_pipe[0]);
+        close(pctx->fd_pipe[1]);
     }
 }
 
-static int spawn_pipe_child(pipe_exec_ctx_t *ctx, int idx)
+static int spawn_pipe_child(pipe_exec_ctx_t *pctx, int idx)
 {
-    if (idx < ctx->count - 1 && pipe(ctx->fd_pipe) == -1)
+    if (idx < pctx->count - 1 && pipe(pctx->fd_pipe) == -1)
         return 84;
-    ctx->pids[idx] = fork();
-    if (ctx->pids[idx] == -1)
+    pctx->pids[idx] = fork();
+    if (pctx->pids[idx] == -1)
         return 84;
-    if (ctx->pids[idx] == 0) {
-        setup_child_pipes(ctx, idx);
-        run_pipe_child_cmd(ctx, idx);
+    if (pctx->pids[idx] == 0) {
+        setup_child_pipes(pctx, idx);
+        run_pipe_child_cmd(pctx, idx);
     }
-    ctx->spawned++;
-    if (ctx->prev_read != -1)
-        close(ctx->prev_read);
-    if (idx < ctx->count - 1)
-        close(ctx->fd_pipe[1]);
-    if (idx < ctx->count - 1)
-        ctx->prev_read = ctx->fd_pipe[0];
+    pctx->spawned++;
+    if (pctx->prev_read != -1)
+        close(pctx->prev_read);
+    if (idx < pctx->count - 1)
+        close(pctx->fd_pipe[1]);
+    if (idx < pctx->count - 1)
+        pctx->prev_read = pctx->fd_pipe[0];
     return 0;
 }
 
-static int wait_pipe_children(pipe_exec_ctx_t *ctx)
+static int wait_pipe_children(pipe_exec_ctx_t *pctx)
 {
     int status = 0;
     int last = 0;
 
-    for (int i = 0; i < ctx->count; i++) {
-        waitpid(ctx->pids[i], &status, 0);
-        if (i == ctx->count - 1)
+    for (int i = 0; i < pctx->count; i++) {
+        waitpid(pctx->pids[i], &status, 0);
+        if (i == pctx->count - 1)
             last = status;
     }
     if (WIFSIGNALED(last))
@@ -96,54 +103,53 @@ static int wait_pipe_children(pipe_exec_ctx_t *ctx)
     return WEXITSTATUS(last);
 }
 
-static int init_pipe_ctx(pipe_exec_ctx_t *ctx, tree_t *node, char ***env,
-    history_t *history)
+static int init_pipe_ctx(pipe_exec_ctx_t *pctx, tree_t *node,
+    char ***env, exec_ctx_t *ctx)
 {
-    ctx->count = count_pipe_nodes(node);
-    ctx->cmds = malloc(sizeof(tree_t *) * ctx->count);
-    ctx->pids = malloc(sizeof(pid_t) * ctx->count);
-    ctx->env = env;
-    ctx->history = history;
-    ctx->spawned = 0;
-    ctx->prev_read = -1;
-    if (ctx->cmds == NULL || ctx->pids == NULL)
+    pctx->count = count_pipe_nodes(node);
+    pctx->cmds = malloc(sizeof(tree_t *) * pctx->count);
+    pctx->pids = malloc(sizeof(pid_t) * pctx->count);
+    pctx->env = env;
+    pctx->ctx = ctx;
+    pctx->spawned = 0;
+    pctx->prev_read = -1;
+    if (pctx->cmds == NULL || pctx->pids == NULL)
         return 84;
-    flatten_pipe_nodes(node, ctx->cmds, 0);
+    flatten_pipe_nodes(node, pctx->cmds, 0);
     return 0;
 }
 
-static void cleanup_failed_pipe(pipe_exec_ctx_t *ctx)
+static void cleanup_failed_pipe(pipe_exec_ctx_t *pctx)
 {
     int status = 0;
 
-    if (ctx->prev_read != -1)
-        close(ctx->prev_read);
-    for (int i = 0; i < ctx->spawned; i++)
-        kill(ctx->pids[i], SIGTERM);
-    for (int i = 0; i < ctx->spawned; i++)
-        waitpid(ctx->pids[i], &status, 0);
+    if (pctx->prev_read != -1)
+        close(pctx->prev_read);
+    for (int i = 0; i < pctx->spawned; i++)
+        kill(pctx->pids[i], SIGTERM);
+    for (int i = 0; i < pctx->spawned; i++)
+        waitpid(pctx->pids[i], &status, 0);
 }
 
-int exec_pipe(tree_t *node, char ***env, history_t *history, job_state_t *job)
+int exec_pipe(tree_t *node, char ***env, exec_ctx_t *ctx)
 {
-    pipe_exec_ctx_t ctx;
+    pipe_exec_ctx_t pctx;
     int ret = 0;
 
-    if (init_pipe_ctx(&ctx, node, env, history) != 0)
+    if (init_pipe_ctx(&pctx, node, env, ctx) != 0)
         return 84;
-    ctx.job = job;
-    for (int i = 0; i < ctx.count; i++) {
-        if (spawn_pipe_child(&ctx, i) != 0) {
-            cleanup_failed_pipe(&ctx);
-            free(ctx.cmds);
-            free(ctx.pids);
+    for (int i = 0; i < pctx.count; i++) {
+        if (spawn_pipe_child(&pctx, i) != 0) {
+            cleanup_failed_pipe(&pctx);
+            free(pctx.cmds);
+            free(pctx.pids);
             return 84;
         }
     }
-    if (ctx.prev_read != -1)
-        close(ctx.prev_read);
-    ret = wait_pipe_children(&ctx);
-    free(ctx.cmds);
-    free(ctx.pids);
+    if (pctx.prev_read != -1)
+        close(pctx.prev_read);
+    ret = wait_pipe_children(&pctx);
+    free(pctx.cmds);
+    free(pctx.pids);
     return ret;
 }

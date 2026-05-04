@@ -10,13 +10,7 @@
 #include "tree.h"
 #include "small_headers.h"
 #include "job_control.h"
-
-int final_exit_script_loop(int exit_code, char *line, char **env)
-{
-    free(line);
-    free_array(env);
-    return exit_code;
-}
+#include "shell.h"
 
 static int expand_sudo_history(char *line, history_t *history, char **expanded)
 {
@@ -61,16 +55,15 @@ static int expand_and_store_history(char **line, history_t *history)
     return 0;
 }
 
-static int handle_interactive_line(char **line, char ***env, history_t *history,
-    job_state_t *job)
+static int handle_interactive_line(char **line, char ***env, exec_ctx_t *ctx)
 {
-    int status = expand_and_store_history(line, history);
+    int status = expand_and_store_history(line, ctx->history);
 
     if (status != 0)
         return status;
     if (*line == NULL)
         return 0;
-    status = handle_line(line, env, history, job);
+    status = handle_line(line, env, ctx);
     return status;
 }
 
@@ -84,12 +77,51 @@ static int read_next_line(char **line, size_t *len, history_t *history)
 static int handle_noninteractive_line(char **line, char ***env, size_t *len,
     exec_ctx_t *ctx)
 {
-    int status = handle_line(line, env, ctx->history, ctx->job);
+    int status = handle_line(line, env, ctx);
 
     if (is_exit_status(status))
         return status;
     *len = 0;
     return 0;
+}
+
+static int loop_step(char **line, size_t *len, char ***env, exec_ctx_t *ctx)
+{
+    int status = 0;
+
+    job_control_reap(ctx->job);
+    status = read_next_line(line, len, ctx->history);
+    if (status == 1) {
+        free(*line);
+        *line = NULL;
+        return 0;
+    }
+    if (status == -1 || *line == NULL)
+        return 84;
+    if (isatty(STDIN_FILENO)) {
+        status = handle_interactive_line(line, env, ctx);
+        if (is_exit_status(status))
+            return status;
+        return status;
+    }
+    return handle_noninteractive_line(line, env, len, ctx);
+}
+
+static int handle_exit_status(int *exit_code)
+{
+    if (!is_exit_status(*exit_code))
+        return 0;
+    *exit_code = exit_status_code(*exit_code);
+    if (isatty(STDIN_FILENO))
+        write(1, "exit\n", 5);
+    return 1;
+}
+
+int final_exit_script_loop(int exit_code, char *line, char **env)
+{
+    free(line);
+    free_array(env);
+    return exit_code;
 }
 
 int clean_getline(char **line, size_t *len)
@@ -108,38 +140,6 @@ int clean_getline(char **line, size_t *len)
     return 0;
 }
 
-static int loop_step(char **line, size_t *len, char ***env, exec_ctx_t *ctx)
-{
-    int status = 0;
-
-    job_control_reap(ctx->job);
-    status = read_next_line(line, len, ctx->history);
-    if (status == 1) {
-        free(*line);
-        *line = NULL;
-        return 0;
-    }
-    if (status == -1 || *line == NULL)
-        return 84;
-    if (isatty(STDIN_FILENO)) {
-        status = handle_interactive_line(line, env, ctx->history, ctx->job);
-        if (is_exit_status(status))
-            return status;
-        return status;
-    }
-    return handle_noninteractive_line(line, env, len, ctx);
-}
-
-static int handle_exit_status(int *exit_code)
-{
-    if (!is_exit_status(*exit_code))
-        return 0;
-    *exit_code = exit_status_code(*exit_code);
-    if (isatty(STDIN_FILENO))
-        write(1, "exit\n", 5);
-    return 1;
-}
-
 int script_loop(char **env)
 {
     int exit_code = 0;
@@ -147,9 +147,10 @@ int script_loop(char **env)
     size_t len = 0;
     history_t history = {0};
     job_state_t job = {0};
-    exec_ctx_t ctx = {&history, &job};
+    shell_t shell = {NULL, NULL};
+    exec_ctx_t ctx = {&history, &job, &shell};
 
-    if (env == NULL || history_init(&history) == 84)
+    if (env == NULL || init_shell_ctx(&history, &shell) == 84)
         return 84;
     while (exit_code != 84) {
         exit_code = loop_step(&line, &len, &env, &ctx);
@@ -157,5 +158,6 @@ int script_loop(char **env)
             break;
     }
     history_destroy(&history);
+    shell_destroy(&shell);
     return final_exit_script_loop(exit_code, line, env);
 }

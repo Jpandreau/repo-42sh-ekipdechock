@@ -71,7 +71,7 @@ Test(main_helpers, run_line_exit_builtin)
     int exit_code = 0;
     history_t history = {0};
     job_state_t job = {0};
-    exec_ctx_t ctx = {&history, &job};
+    exec_ctx_t ctx = {&history, &job, NULL};
 
     cr_assert_not_null(env);
     history_init(&history);
@@ -87,7 +87,7 @@ Test(main_helpers, run_line_invalid_tree_returns_0)
     int exit_code = 0;
     history_t history = {0};
     job_state_t job = {0};
-    exec_ctx_t ctx = {&history, &job};
+    exec_ctx_t ctx = {&history, &job, NULL};
 
     cr_assert_not_null(env);
     history_init(&history);
@@ -103,7 +103,7 @@ Test(main_helpers, run_line_error_84_becomes_stop)
     int exit_code = 0;
     history_t history = {0};
     job_state_t job = {0};
-    exec_ctx_t ctx = {&history, &job};
+    exec_ctx_t ctx = {&history, &job, NULL};
 
     cr_assert_not_null(env);
     history_init(&history);
@@ -120,7 +120,7 @@ Test(main_helpers, handle_pipe_line_empty_line)
     char input[] = "\n";
     history_t history = {0};
     job_state_t job = {0};
-    exec_ctx_t ctx = {&history, &job};
+    exec_ctx_t ctx = {&history, &job, NULL};
 
     cr_assert_not_null(env);
     history_init(&history);
@@ -137,7 +137,7 @@ Test(main_helpers, handle_pipe_line_exit)
     char input[] = "exit 3\n";
     history_t history = {0};
     job_state_t job = {0};
-    exec_ctx_t ctx = {&history, &job};
+    exec_ctx_t ctx = {&history, &job, NULL};
 
     cr_assert_not_null(env);
     history_init(&history);
@@ -153,11 +153,12 @@ Test(script_loop_helpers, init_exec_null_tree_frees_line)
     char *line = my_strdup(";");
     history_t history = {0};
     job_state_t job = {0};
+    exec_ctx_t ctx = {&history, &job, NULL};
 
     cr_assert_not_null(env);
     cr_assert_not_null(line);
     history_init(&history);
-    cr_assert_eq(init_exec(&line, &env, &history, &job), 0);
+    cr_assert_eq(init_exec(&line, &env, &ctx), 0);
     cr_assert_null(line);
     history_destroy(&history);
     free_array(env);
@@ -169,11 +170,12 @@ Test(script_loop_helpers, handle_line_exit_status)
     char *line = my_strdup("exit 9");
     history_t history = {0};
     job_state_t job = {0};
+    exec_ctx_t ctx = {&history, &job, NULL};
 
     cr_assert_not_null(env);
     cr_assert_not_null(line);
     history_init(&history);
-    cr_assert_eq(handle_line(&line, &env, &history, &job), make_exit_status(9));
+    cr_assert_eq(handle_line(&line, &env, &ctx), make_exit_status(9));
     cr_assert_null(line);
     history_destroy(&history);
     free_array(env);
@@ -185,11 +187,12 @@ Test(script_loop_helpers, handle_line_exit_syntax_returns_0)
     char *line = my_strdup("exit a");
     history_t history = {0};
     job_state_t job = {0};
+    exec_ctx_t ctx = {&history, &job, NULL};
 
     cr_assert_not_null(env);
     cr_assert_not_null(line);
     history_init(&history);
-    cr_assert_eq(handle_line(&line, &env, &history, &job), 0);
+    cr_assert_eq(handle_line(&line, &env, &ctx), 0);
     cr_assert_null(line);
     history_destroy(&history);
     free_array(env);

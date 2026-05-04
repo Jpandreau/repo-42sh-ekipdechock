@@ -11,6 +11,7 @@
     #include <stddef.h>
     #include <sys/types.h>
     #include <sys/stat.h>
+    #include <shell.h>
 
 typedef struct tokenize_ctx_s {
     int i;
@@ -39,11 +40,12 @@ typedef struct job_state_s job_state_t;
 typedef struct exec_ctx_s {
     history_t *history;
     job_state_t *job;
+    shell_t *shell;
 } exec_ctx_t;
 
-int init_exec(char **line, char ***env, history_t *history, job_state_t *job);
-int handle_line(char **line, char ***env, history_t *history,
-    job_state_t *job);
+int init_exec(char **line, char ***env, exec_ctx_t *ctx);
+int handle_line(char **line, char ***env, exec_ctx_t *ctx);
+int init_shell_ctx(history_t *history, shell_t *shell);
 
 int history_init(history_t *history);
 void history_destroy(history_t *history);
