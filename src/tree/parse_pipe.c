@@ -10,7 +10,7 @@
 
 tree_t *parse_pipe(token_t **tokens, int *pos)
 {
-    tree_t *left = parse_command(tokens, pos);
+    tree_t *left = parse_primary(tokens, pos);
     tree_t *node = NULL;
     tree_t *right = NULL;
 
@@ -21,7 +21,7 @@ tree_t *parse_pipe(token_t **tokens, int *pos)
         if (node == NULL)
             return free_tree(left), NULL;
         (*pos)++;
-        right = parse_command(tokens, pos);
+        right = parse_primary(tokens, pos);
         if (right == NULL)
             return free_tree(left), free_tree(node), NULL;
         node->left = left;
