@@ -8,10 +8,9 @@
 #include "tree.h"
 #include "job_control.h"
 
-int exec_background(tree_t *node, char ***env, history_t *history,
-    job_state_t *job)
+int exec_background(tree_t *node, char ***env, exec_ctx_t *ctx)
 {
     if (node == NULL)
         return 0;
-    return job_launch_background(node, env, history, job);
+    return job_launch_background(node, env, ctx);
 }
