@@ -123,18 +123,23 @@ static int run_command_node(tree_t *node, char ***env,
     history_t *history, job_state_t *job)
 {
     char **expanded = NULL;
+    char **globbed = NULL;
     int status = 0;
 
     if (node->args == NULL || node->args[0] == NULL)
         return 0;
-    expanded = expand_glob_args(node->args);
+    expanded = expand_backtick_args(node->args, node->arg_types, env);
     if (!expanded)
         return 84;
-    if (buildin(expanded[0]))
-        status = run_buildin_args(expanded, env, history, job);
-    else
-        status = actions_cmd_args(expanded, env, history, job);
+    globbed = expand_glob_args(expanded);
     free_array(expanded);
+    if (!globbed)
+        return 84;
+    if (buildin(globbed[0]))
+        status = run_buildin_args(globbed, env, history, job);
+    else
+        status = actions_cmd_args(globbed, env, history, job);
+    free_array(globbed);
     return status;
 }
 
