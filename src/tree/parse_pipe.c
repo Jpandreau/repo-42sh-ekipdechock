@@ -1,6 +1,6 @@
 /*
 ** EPITECH PROJECT, 2026
-** parse_pipe
+** 42sh
 ** File description:
 ** parse_pipe
 */
@@ -8,7 +8,7 @@
 #include "base.h"
 #include "tree.h"
 
-tree_t *parse_pipe(char **tokens, int *pos)
+tree_t *parse_pipe(token_t **tokens, int *pos)
 {
     tree_t *left = parse_command(tokens, pos);
     tree_t *node = NULL;
@@ -16,7 +16,7 @@ tree_t *parse_pipe(char **tokens, int *pos)
 
     if (left == NULL)
         return NULL;
-    while (tokens[*pos] && my_strcmp(tokens[*pos], "|") == 0) {
+    while (tokens[*pos] && my_strcmp(tokens[*pos]->value, "|") == 0) {
         node = new_node(TOKEN_PIPE);
         if (node == NULL)
             return free_tree(left), NULL;

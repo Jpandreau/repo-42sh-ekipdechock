@@ -48,10 +48,10 @@ typedef struct pipe_exec_ctx_s {
     job_state_t *job;
 } pipe_exec_ctx_t;
 
-tree_t *parse_sequence(char **tokens, int *pos);
-tree_t *parse_logic(char **tokens, int *pos);
-tree_t *parse_pipe(char **tokens, int *pos);
-tree_t *parse_command(char **tokens, int *pos);
+tree_t *parse_sequence(token_t **tokens, int *pos);
+tree_t *parse_logic(token_t **tokens, int *pos);
+tree_t *parse_pipe(token_t **tokens, int *pos);
+tree_t *parse_command(token_t **tokens, int *pos);
 
 tree_t *new_node(tree_type_t type);
 tree_t *get_tree_token(char *line);

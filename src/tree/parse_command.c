@@ -1,6 +1,6 @@
 /*
 ** EPITECH PROJECT, 2026
-** parse_command
+** 42sh
 ** File description:
 ** parse_command
 */
@@ -68,40 +68,40 @@ static int set_redir_field(char **field, char *token)
     return 0;
 }
 
-static int consume_redirection(tree_t *node, char **tokens, int *pos)
+static int consume_redirection(tree_t *node, token_t **tokens, int *pos)
 {
-    char *op = tokens[*pos];
+    char *op = tokens[*pos]->value;
 
     (*pos)++;
-    if (tokens[*pos] == NULL || is_control_token(tokens[*pos]))
+    if (tokens[*pos] == NULL || is_control_token(tokens[*pos]->value))
         return 1;
     if (my_strcmp(op, "<") == 0) {
         node->heredoc = 0;
-        return set_redir_field(&node->input, tokens[*pos]);
+        return set_redir_field(&node->input, tokens[*pos]->value);
     }
     if (my_strcmp(op, "<<") == 0) {
         node->heredoc = 1;
-        return set_redir_field(&node->input, tokens[*pos]);
+        return set_redir_field(&node->input, tokens[*pos]->value);
     }
     node->append = my_strcmp(op, ">>") == 0;
-    return set_redir_field(&node->output, tokens[*pos]);
+    return set_redir_field(&node->output, tokens[*pos]->value);
 }
 
-static int consume_command_token(tree_t *node, char **tokens, int *pos)
+static int consume_command_token(tree_t *node, token_t **tokens, int *pos)
 {
-    if (is_redirection_token(tokens[*pos])) {
+    if (is_redirection_token(tokens[*pos]->value)) {
         if (consume_redirection(node, tokens, pos) != 0)
             return 1;
         (*pos)++;
         return 0;
     }
-    if (add_arg(node, tokens[*pos]) != 0)
+    if (add_arg(node, tokens[*pos]->value) != 0)
         return 1;
     (*pos)++;
     return 0;
 }
 
-tree_t *parse_command(char **tokens, int *pos)
+tree_t *parse_command(token_t **tokens, int *pos)
 {
     tree_t *node = new_node(TOKEN_CMD);
 
@@ -112,12 +112,13 @@ tree_t *parse_command(char **tokens, int *pos)
         free_tree(node);
         return NULL;
     }
-    while (tokens[*pos] && !is_control_token(tokens[*pos]))
+    while (tokens[*pos] && !is_control_token(tokens[*pos]->value))
         if (consume_command_token(node, tokens, pos) != 0) {
             free_tree(node);
             return NULL;
         }
-    if (node->args[0] == NULL && node->input == NULL && node->output == NULL) {
+    if (node->args[0] == NULL && node->input == NULL
+        && node->output == NULL) {
         free_tree(node);
         return NULL;
     }

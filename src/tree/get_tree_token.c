@@ -1,6 +1,6 @@
 /*
 ** EPITECH PROJECT, 2026
-** get_tree_token
+** 42sh
 ** File description:
 ** get_tree_token
 */
@@ -8,15 +8,16 @@
 #include "base.h"
 #include "tree.h"
 #include "small_headers.h"
+#include "tokenize_line_helpers.h"
 
 tree_t *get_tree_token(char *line)
 {
-    char **tokens = tokenize_line(line);
+    token_t **tokens = tokenize_line(line);
     int pos = 0;
     tree_t *tree = NULL;
 
     if (tokens == NULL || tokens[0] == NULL) {
-        free_array(tokens);
+        free_tokens(tokens);
         return NULL;
     }
     tree = parse_sequence(tokens, &pos);
@@ -24,6 +25,6 @@ tree_t *get_tree_token(char *line)
         free_tree(tree);
         tree = NULL;
     }
-    free_array(tokens);
+    free_tokens(tokens);
     return tree;
 }
