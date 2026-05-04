@@ -8,22 +8,70 @@
 #include "base.h"
 #include "tree.h"
 #include "small_headers.h"
+#include "shell.h"
 
-int init_exec(char **line, char ***env, history_t *history, job_state_t *job)
+static int exec_shell_builtin(tree_t *tree, shell_t *shell)
 {
-    tree_t *tree = get_tree_token(*line);
     int status = 0;
 
+    if (!tree || tree->type != TOKEN_CMD || !tree->args)
+        return -1;
+    if (!shell || !is_shell_builtin(tree->args[0]))
+        return -1;
+    status = run_shell_builtin(tree->args, shell);
+    free_tree(tree);
+    return status;
+}
+
+static void apply_expansion(char **line, char **aliases, char **locals,
+    char **env)
+{
+    char *expanded = expand_alias_in_line(*line, aliases);
+
+    if (expanded) {
+        free(*line);
+        *line = expanded;
+    }
+    expanded = expand_vars_in_line(*line, locals, env);
+    if (expanded) {
+        free(*line);
+        *line = expanded;
+    }
+}
+
+int init_exec(char **line, char ***env, exec_ctx_t *ctx)
+{
+    tree_t *tree = NULL;
+    int status = 0;
+    int sb_status = 0;
+
+    if (ctx->shell)
+        apply_expansion(line, ctx->shell->aliases, ctx->shell->locals, *env);
+    tree = get_tree_token(*line);
     free(*line);
     *line = NULL;
+    sb_status = exec_shell_builtin(tree, ctx->shell);
+    if (sb_status != -1)
+        return sb_status;
     if (tree) {
-        status = exec_tree(tree, env, history, job);
+        status = exec_tree(tree, env, ctx);
         free_tree(tree);
     }
     return status;
 }
 
-int handle_line(char **line, char ***env, history_t *history, job_state_t *job)
+int init_shell_ctx(history_t *history, shell_t *shell)
+{
+    if (history_init(history) == 84)
+        return 84;
+    if (shell_init(shell) == 84) {
+        history_destroy(history);
+        return 84;
+    }
+    return 0;
+}
+
+int handle_line(char **line, char ***env, exec_ctx_t *ctx)
 {
     int code = 0;
     int status = parse_exit_line(*line, &code);
@@ -38,6 +86,6 @@ int handle_line(char **line, char ***env, history_t *history, job_state_t *job)
         *line = NULL;
         return 0;
     }
-    status = init_exec(line, env, history, job);
+    status = init_exec(line, env, ctx);
     return status;
 }

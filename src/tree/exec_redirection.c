@@ -16,6 +16,7 @@
 #include "buildin.h"
 #include "my.h"
 #include "expandargs.h"
+#include "shell.h"
 
 static void print_redirection_error(char *path)
 {
@@ -110,17 +111,18 @@ static int redirect_output(tree_t *node)
     return 0;
 }
 
-static int apply_redirections_node(tree_t *node)
+static int exec_globbed_args(char **globbed, char ***env, exec_ctx_t *ctx)
 {
-    if (redirect_input(node) != 0)
-        return 1;
-    if (redirect_output(node) != 0)
-        return 1;
-    return 0;
+    if (ctx != NULL && ctx->shell != NULL && is_shell_builtin(globbed[0]))
+        return run_shell_builtin(globbed, ctx->shell);
+    if (buildin(globbed[0]))
+        return run_buildin_args(globbed, env,
+            ctx ? ctx->history : NULL, ctx ? ctx->job : NULL);
+    return actions_cmd_args(globbed, env,
+        ctx ? ctx->history : NULL, ctx ? ctx->job : NULL);
 }
 
-static int run_command_node(tree_t *node, char ***env,
-    history_t *history, job_state_t *job)
+static int run_command_node(tree_t *node, char ***env, exec_ctx_t *ctx)
 {
     char **expanded = NULL;
     char **globbed = NULL;
@@ -135,10 +137,7 @@ static int run_command_node(tree_t *node, char ***env,
     free_array(expanded);
     if (!globbed)
         return 84;
-    if (buildin(globbed[0]))
-        status = run_buildin_args(globbed, env, history, job);
-    else
-        status = actions_cmd_args(globbed, env, history, job);
+    status = exec_globbed_args(globbed, env, ctx);
     free_array(globbed);
     return status;
 }
@@ -151,8 +150,7 @@ static void restore_stdio(int saved_in, int saved_out)
     close(saved_out);
 }
 
-int exec_cmd_with_redirections(tree_t *node, char ***env,
-    history_t *history, job_state_t *job)
+int exec_cmd_with_redirections(tree_t *node, char ***env, exec_ctx_t *ctx)
 {
     int saved_in = dup(STDIN_FILENO);
     int saved_out = dup(STDOUT_FILENO);
@@ -160,11 +158,11 @@ int exec_cmd_with_redirections(tree_t *node, char ***env,
 
     if (saved_in < 0 || saved_out < 0)
         return 84;
-    if (apply_redirections_node(node) != 0) {
+    if (redirect_input(node) != 0 || redirect_output(node) != 0) {
         restore_stdio(saved_in, saved_out);
         return 1;
     }
-    status = run_command_node(node, env, history, job);
+    status = run_command_node(node, env, ctx);
     restore_stdio(saved_in, saved_out);
     return status;
 }

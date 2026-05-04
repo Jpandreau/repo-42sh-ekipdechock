@@ -11,6 +11,7 @@
     #include <stddef.h>
     #include <sys/types.h>
     #include <sys/stat.h>
+    #include <shell.h>
 
 typedef enum {
     TOKEN_TYPE_WORD,
@@ -51,6 +52,7 @@ typedef struct job_state_s job_state_t;
 typedef struct exec_ctx_s {
     history_t *history;
     job_state_t *job;
+    shell_t *shell;
 } exec_ctx_t;
 
 token_t **tokenize_line(char *line);
@@ -58,10 +60,9 @@ int tokenize_step(char *line, tokenize_ctx_t *ctx);
 int parse_exit_line(char *line, int *code);
 int exit_code_from_args(char **args, int *valid);
 int parse_exit_code_arg(char *str, int *ok);
-int init_exec(char **line, char ***env,
-    history_t *history, job_state_t *job);
-int handle_line(char **line, char ***env,
-    history_t *history, job_state_t *job);
+int init_exec(char **line, char ***env, exec_ctx_t *ctx);
+int handle_line(char **line, char ***env, exec_ctx_t *ctx);
+int init_shell_ctx(history_t *history, shell_t *shell);
 int history_init(history_t *history);
 void history_destroy(history_t *history);
 int history_add(history_t *history, char *line);

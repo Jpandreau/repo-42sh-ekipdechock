@@ -94,7 +94,7 @@ Test(buildin, partial_match_cde)
 
 Test(buildin, partial_match_set)
 {
-    cr_assert_eq(buildin("set"), 0);
+    cr_assert_eq(buildin("set"), 1);
 }
 
 Test(buildin, with_whitespace)

@@ -10,8 +10,7 @@
 #include <sys/wait.h>
 #include "tree.h"
 
-int exec_subshell(tree_t *node, char ***env, history_t *history,
-    job_state_t *job)
+int exec_subshell(tree_t *node, char ***env, exec_ctx_t *ctx)
 {
     pid_t pid = fork();
     int status = 0;
@@ -19,7 +18,7 @@ int exec_subshell(tree_t *node, char ***env, history_t *history,
     if (pid == -1)
         return 84;
     if (pid == 0)
-        exit(exec_tree(node->left, env, history, job));
+        exit(exec_tree(node->left, env, ctx));
     waitpid(pid, &status, 0);
     if (WIFSIGNALED(status))
         return 1;
