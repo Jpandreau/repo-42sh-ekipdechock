@@ -95,6 +95,8 @@ int exec_tree(tree_t *node, char ***env, history_t *history, job_state_t *job)
         return exec_logic_or(node, env, history, job);
     if (node->type == TOKEN_PIPE)
         return exec_pipe(node, env, history, job);
+    if (node->type == TOKEN_SUBSHELL)
+        return exec_subshell(node, env, history, job);
     return (node->type == TOKEN_CMD) ?
         prepare_and_exec_cmd(node, env, history, job) : 1;
 }

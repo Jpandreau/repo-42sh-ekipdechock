@@ -34,6 +34,8 @@ static int run_pipe_child_cmd(pipe_exec_ctx_t *ctx, int idx)
     tree_t *cmd = ctx->cmds[idx];
     int status = 0;
 
+    if (cmd->type == TOKEN_SUBSHELL)
+        exit(exec_tree(cmd, ctx->env, ctx->history, ctx->job));
     if (cmd->input != NULL || cmd->output != NULL) {
         status = exec_cmd_with_redirections(cmd, ctx->env, ctx->history,
             ctx->job);
