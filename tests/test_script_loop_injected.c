@@ -139,7 +139,7 @@ int mocked_interactive_getline(char **line, size_t *len, history_t *history)
 #define history_destroy mocked_history_destroy
 #define history_add mocked_history_add
 #define history_expand_line mocked_history_expand_line
-#define interactive_getline mocked_interactive_getline
+#define interactive_get_line mocked_interactive_getline
 #include "../src/script_loop.c"
 #undef interactive_getline
 #undef history_expand_line
