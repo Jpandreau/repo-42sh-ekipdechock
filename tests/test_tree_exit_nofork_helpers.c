@@ -85,8 +85,8 @@ Test(exec_tree_nofork, null_and_unknown_node)
     char **env = env_data;
     tree_t *node = new_node(TOKEN_EOF);
 
-    cr_assert_eq(exec_tree_nofork(NULL, &env, NULL, NULL), 0);
-    cr_assert_eq(exec_tree_nofork(node, &env, NULL, NULL), 1);
+    cr_assert_eq(exec_tree_nofork(NULL, &env, NULL), 0);
+    cr_assert_eq(exec_tree_nofork(node, &env, NULL), 1);
     free_tree(node);
 }
 
@@ -100,13 +100,13 @@ Test(exec_tree_nofork, and_or_sequence_paths)
 
     and_node->left = make_cmd("env", NULL, NULL);
     and_node->right = new_node(TOKEN_EOF);
-    cr_assert_eq(exec_tree_nofork(and_node, &env, NULL, NULL), 1);
+    cr_assert_eq(exec_tree_nofork(and_node, &env, NULL), 1);
     or_node->left = new_node(TOKEN_EOF);
     or_node->right = new_node(TOKEN_EOF);
-    cr_assert_eq(exec_tree_nofork(or_node, &env, NULL, NULL), 1);
+    cr_assert_eq(exec_tree_nofork(or_node, &env, NULL), 1);
     seq_node->left = new_node(TOKEN_EOF);
     seq_node->right = new_node(TOKEN_EOF);
-    cr_assert_eq(exec_tree_nofork(seq_node, &env, NULL, NULL), 1);
+    cr_assert_eq(exec_tree_nofork(seq_node, &env, NULL), 1);
     free_tree(and_node);
     free_tree(or_node);
     free_tree(seq_node);
