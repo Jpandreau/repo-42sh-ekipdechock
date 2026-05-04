@@ -17,6 +17,7 @@
 #include "my.h"
 #include "expandargs.h"
 #include "shell.h"
+#include "expandargs.h"
 
 static void print_redirection_error(char *path)
 {
@@ -111,33 +112,36 @@ static int redirect_output(tree_t *node)
     return 0;
 }
 
-static int exec_globbed_args(char **globbed, char ***env, exec_ctx_t *ctx)
+static char **expand_node_args(tree_t *node, char ***env)
 {
-    if (ctx != NULL && ctx->shell != NULL && is_shell_builtin(globbed[0]))
-        return run_shell_builtin(globbed, ctx->shell);
-    if (buildin(globbed[0]))
-        return run_buildin_args(globbed, env,
-            ctx ? ctx->history : NULL, ctx ? ctx->job : NULL);
-    return actions_cmd_args(globbed, env,
-        ctx ? ctx->history : NULL, ctx ? ctx->job : NULL);
+    char **expanded = expand_backtick_args(node->args, node->arg_types, env);
+    char **globbed = NULL;
+
+    if (expanded == NULL)
+        return NULL;
+    globbed = expand_glob_args(expanded);
+    free_array(expanded);
+    return globbed;
 }
 
 static int run_command_node(tree_t *node, char ***env, exec_ctx_t *ctx)
 {
-    char **expanded = NULL;
     char **globbed = NULL;
     int status = 0;
 
     if (node->args == NULL || node->args[0] == NULL)
         return 0;
-    expanded = expand_backtick_args(node->args, node->arg_types, env);
-    if (!expanded)
+    globbed = expand_node_args(node, env);
+    if (globbed == NULL)
         return 84;
-    globbed = expand_glob_args(expanded);
-    free_array(expanded);
-    if (!globbed)
-        return 84;
-    status = exec_globbed_args(globbed, env, ctx);
+    if (ctx != NULL && ctx->shell != NULL && is_shell_builtin(globbed[0]))
+        status = run_shell_builtin(globbed, ctx->shell);
+    else if (buildin(globbed[0]))
+        status = run_buildin_args(globbed, env,
+            ctx ? ctx->history : NULL, ctx ? ctx->job : NULL);
+    else
+        status = actions_cmd_args(globbed, env,
+            ctx ? ctx->history : NULL, ctx ? ctx->job : NULL);
     free_array(globbed);
     return status;
 }
