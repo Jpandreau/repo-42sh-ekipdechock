@@ -46,11 +46,17 @@ static int pipe_run_loop(char **line, size_t *len, char ***env,
     exec_ctx_t *ctx)
 {
     int status = 0;
+    int read_ret = clean_getline(line, len);
 
-    while (clean_getline(line, len) != -1) {
+    while (read_ret != -1) {
+        if (read_ret == 1) {
+            read_ret = clean_getline(line, len);
+            continue;
+        }
         status = handle_line(line, env, ctx);
         if (is_exit_status(status))
             return exit_status_code(status);
+        read_ret = clean_getline(line, len);
     }
     return 0;
 }
@@ -64,7 +70,7 @@ int exec_all_cmd_file(char *content, char ***env)
     shell_t shell = {NULL, NULL};
     exec_ctx_t ctx = {&history, &job, &shell};
 
-    if (history_init(&history) == 84 || shell_init(&shell) == 84)
+    if (init_shell_ctx(&history, &shell) == 84)
         return 84;
     for (input_line = strtok(content, "\n"); input_line != NULL;
         input_line = strtok(NULL, "\n")) {
@@ -106,7 +112,7 @@ int pipe_input(char **env)
     shell_t shell = {NULL, NULL};
     exec_ctx_t ctx = {&history, &job, &shell};
 
-    if (history_init(&history) == 84 || shell_init(&shell) == 84)
+    if (init_shell_ctx(&history, &shell) == 84)
         return pipe_input_fail(env);
     exit_code = pipe_run_loop(&line, &len, &env, &ctx);
     pipe_cleanup(line, env, &history, &shell);
