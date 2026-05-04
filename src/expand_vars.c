@@ -89,9 +89,30 @@ static char *consume_literal(char *line, int *i)
 {
     int start = *i;
 
-    while (line[*i] && line[*i] != '$')
+    while (line[*i] && line[*i] != '$' && line[*i] != '\'')
         (*i)++;
     return my_strndup(line + start, *i - start);
+}
+
+static char *consume_single_quoted(char *line, int *i)
+{
+    int start = *i;
+
+    (*i)++;
+    while (line[*i] && line[*i] != '\'')
+        (*i)++;
+    if (line[*i] == '\'')
+        (*i)++;
+    return my_strndup(line + start, *i - start);
+}
+
+static char *pick_chunk(char *line, int *i, char **locals, char **env)
+{
+    if (line[*i] == '\'')
+        return consume_single_quoted(line, i);
+    if (line[*i] == '$')
+        return consume_var(line, i, locals, env);
+    return consume_literal(line, i);
 }
 
 char *expand_vars_in_line(char *line, char **locals, char **env)
@@ -101,10 +122,7 @@ char *expand_vars_in_line(char *line, char **locals, char **env)
     int i = 0;
 
     while (result != NULL && line[i]) {
-        if (line[i] == '$')
-            chunk = consume_var(line, &i, locals, env);
-        else
-            chunk = consume_literal(line, &i);
+        chunk = pick_chunk(line, &i, locals, env);
         if (chunk == NULL) {
             free(result);
             return NULL;
