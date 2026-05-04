@@ -5,6 +5,7 @@
 ** line buffer management
 */
 
+#include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
 #include "base.h"
@@ -45,14 +46,33 @@ void state_free(line_state_t *s)
     free(s->buffer);
 }
 
-void redraw_line(line_state_t *s)
+static void move_to_pos(int end_row, int tgt_row, int tgt_col)
 {
-    int back = s->len - s->pos;
     int i = 0;
 
-    write(1, "\r\033[2K$> ", 8);
+    for (i = end_row - tgt_row; i > 0; i--)
+        write(1, "\033[A", 3);
+    write(1, "\r", 1);
+    for (i = 0; i < tgt_col; i++)
+        write(1, "\033[C", 3);
+}
+
+void redraw_line(line_state_t *s)
+{
+    int cols = (COLS > 0) ? COLS : 80;
+    int prompt_len = 3;
+    int cursor_abs = prompt_len + s->pos;
+    int end_abs = prompt_len + s->len;
+    int prev_row = s->last_cursor_abs / cols;
+    int end_row = end_abs / cols;
+    int i = 0;
+
+    for (i = 0; i < prev_row; i++)
+        write(1, "\033[A", 3);
+    write(1, "\r\033[J", 5);
+    write(1, "$> ", 3);
     if (s->buffer != NULL && s->len > 0)
         write(1, s->buffer, s->len);
-    for (i = 0; i < back; i++)
-        write(1, "\033[D", 3);
+    move_to_pos(end_row, cursor_abs / cols, cursor_abs % cols);
+    s->last_cursor_abs = cursor_abs;
 }

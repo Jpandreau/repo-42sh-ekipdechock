@@ -18,6 +18,7 @@ typedef struct line_state_s {
     history_t *history;
     int hist_idx;
     char *saved;
+    int last_cursor_abs;
 } line_state_t;
 
 void line_editor_init(void);
