@@ -150,8 +150,7 @@ int script_loop(char **env)
     shell_t shell = {NULL, NULL};
     exec_ctx_t ctx = {&history, &job, &shell};
 
-    if (env == NULL || history_init(&history) == 84
-        || shell_init(&shell) == 84)
+    if (env == NULL || init_shell_ctx(&history, &shell) == 84)
         return 84;
     while (exit_code != 84) {
         exit_code = loop_step(&line, &len, &env, &ctx);

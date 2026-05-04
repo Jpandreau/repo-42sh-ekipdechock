@@ -54,10 +54,21 @@ int init_exec(char **line, char ***env, exec_ctx_t *ctx)
     if (sb_status != -1)
         return sb_status;
     if (tree) {
-        status = exec_tree(tree, env, ctx->history, ctx->job);
+        status = exec_tree(tree, env, ctx);
         free_tree(tree);
     }
     return status;
+}
+
+int init_shell_ctx(history_t *history, shell_t *shell)
+{
+    if (history_init(history) == 84)
+        return 84;
+    if (shell_init(shell) == 84) {
+        history_destroy(history);
+        return 84;
+    }
+    return 0;
 }
 
 int handle_line(char **line, char ***env, exec_ctx_t *ctx)
