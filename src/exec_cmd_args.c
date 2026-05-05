@@ -111,7 +111,7 @@ int exec_cmd_args(char **args, char **env)
         return 84;
     if (check_cmd(args[0]) != 0)
         return 1;
-    if (args[0][0] == '/' || args[0][0] == '.')
+    if (args[0][0] == '/' || args[0][0] == '.' || strchr(args[0], '/'))
         return exec_launch_format_arg_args(args[0], args, env);
     return exec_path_env_args(args[0], args, env);
 }

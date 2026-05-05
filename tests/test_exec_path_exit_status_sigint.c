@@ -57,5 +57,5 @@ Test(handle_sigint, prints_prompt, .init = cr_redirect_stdout)
 {
     handle_sigint(SIGINT);
     fflush(stdout);
-    cr_assert_stdout_eq_str("\n$> ");
+    cr_assert_stdout_eq_str("\r\n$> ");
 }

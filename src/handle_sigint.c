@@ -10,5 +10,5 @@
 void handle_sigint(int sig)
 {
     (void)sig;
-    write(1, "\n$> ", 4);
+    write(1, "\r\n$> ", 5);
 }
