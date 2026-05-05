@@ -30,22 +30,6 @@ static int flatten_pipe_nodes(tree_t *node, tree_t **cmds, int idx)
     return flatten_pipe_nodes(node->right, cmds, idx);
 }
 
-static void run_pipe_cmd_exec(pipe_exec_ctx_t *pctx, tree_t *cmd)
-{
-    int status = 0;
-
-    if (pctx->ctx != NULL && pctx->ctx->shell != NULL
-        && is_shell_builtin(cmd->args[0]))
-        exit(run_shell_builtin(cmd->args, pctx->ctx->shell));
-    if (buildin(cmd->args[0])) {
-        status = run_buildin_args(cmd->args, pctx->env,
-            pctx->ctx ? pctx->ctx->history : NULL,
-            pctx->ctx ? pctx->ctx->job : NULL);
-        exit(status);
-    }
-    exit(exec_cmd_args_nofork(cmd->args, *pctx->env));
-}
-
 static int run_pipe_child_cmd(pipe_exec_ctx_t *pctx, int idx)
 {
     tree_t *cmd = pctx->cmds[idx];
@@ -53,14 +37,10 @@ static int run_pipe_child_cmd(pipe_exec_ctx_t *pctx, int idx)
 
     if (cmd->type == TOKEN_SUBSHELL)
         exit(exec_tree(cmd, pctx->env, pctx->ctx));
-    if (cmd->input != NULL || cmd->output != NULL) {
-        status = exec_cmd_with_redirections(cmd, pctx->env, pctx->ctx);
-        exit(status);
-    }
     if (cmd->args == NULL || cmd->args[0] == NULL)
         exit(0);
-    run_pipe_cmd_exec(pctx, cmd);
-    return 0;
+    status = exec_cmd_with_redirections(cmd, pctx->env, pctx->ctx);
+    exit(status);
 }
 
 static void setup_child_pipes(pipe_exec_ctx_t *pctx, int idx)
