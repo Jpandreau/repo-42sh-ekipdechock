@@ -10,6 +10,15 @@
 #include "base.h"
 #include "line_edition.h"
 
+static int read_escape_seq3(void)
+{
+    unsigned char tilde = 0;
+
+    if (read(STDIN_FILENO, &tilde, 1) == 1 && tilde == '~')
+        return LE_KEY_DEL;
+    return 27;
+}
+
 static int read_escape(void)
 {
     unsigned char seq[2] = {0};
@@ -28,6 +37,8 @@ static int read_escape(void)
         return LE_KEY_RIGHT;
     if (seq[1] == 'D')
         return LE_KEY_LEFT;
+    if (seq[1] == '3')
+        return read_escape_seq3();
     return 27;
 }
 
@@ -68,6 +79,19 @@ static int handle_history(line_state_t *s, int up)
     return state_load(s, s->history->entries[s->hist_idx]);
 }
 
+static int handle_delete(line_state_t *s)
+{
+    int i = s->pos;
+
+    if (s->pos >= s->len)
+        return 0;
+    s->len--;
+    for (; i < s->len; i++)
+        s->buffer[i] = s->buffer[i + 1];
+    s->buffer[s->len] = '\0';
+    return 0;
+}
+
 static int handle_backspace(line_state_t *s)
 {
     int i = s->pos;
@@ -101,14 +125,12 @@ static int handle_key(line_state_t *s, int ch)
 {
     if (ch == 127 || ch == 8)
         return handle_backspace(s);
-    if (ch == LE_KEY_LEFT && s->pos > 0) {
+    if (ch == LE_KEY_LEFT && s->pos > 0)
         s->pos--;
-        return 0;
-    }
-    if (ch == LE_KEY_RIGHT && s->pos < s->len) {
+    if (ch == LE_KEY_RIGHT && s->pos < s->len)
         s->pos++;
-        return 0;
-    }
+    if (ch == LE_KEY_DEL)
+        return handle_delete(s);
     if (ch == LE_KEY_UP)
         return handle_history(s, 1);
     if (ch == LE_KEY_DOWN)
