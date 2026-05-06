@@ -14,6 +14,7 @@
     #define LE_KEY_DOWN 1002
     #define LE_KEY_RIGHT 1003
     #define LE_KEY_LEFT 1004
+    #define LE_KEY_DEL 1005
 
 typedef struct line_state_s {
     char *buffer;
