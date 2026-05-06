@@ -85,5 +85,7 @@ int open_and_stat(char *filename, struct stat *st);
 int read_content(int file, struct stat *st, char **content);
 int handle_pipeline(char *input_line, char ***env,
     int *exit_code, exec_ctx_t *ctx);
+void run_hook(char *name, char ***env, exec_ctx_t *ctx);
+void check_and_run_cwdcmd(char *old_cwd, char ***env, exec_ctx_t *ctx);
 
 #endif

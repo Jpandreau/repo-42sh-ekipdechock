@@ -89,3 +89,32 @@ int handle_line(char **line, char ***env, exec_ctx_t *ctx)
     status = init_exec(line, env, ctx);
     return status;
 }
+
+void run_hook(char *name, char ***env, exec_ctx_t *ctx)
+{
+    char *cmd = NULL;
+    char *dup = NULL;
+
+    if (ctx == NULL || ctx->shell == NULL)
+        return;
+    cmd = get_alias(ctx->shell->aliases, name);
+    if (cmd == NULL)
+        return;
+    dup = my_strdup(cmd);
+    if (dup == NULL)
+        return;
+    init_exec(&dup, env, ctx);
+}
+
+void check_and_run_cwdcmd(char *old_cwd, char ***env, exec_ctx_t *ctx)
+{
+    char *new_cwd = getcwd(NULL, 0);
+
+    if (new_cwd == NULL || old_cwd == NULL) {
+        free(new_cwd);
+        return;
+    }
+    if (my_strcmp(old_cwd, new_cwd) != 0)
+        run_hook("cwdcmd", env, ctx);
+    free(new_cwd);
+}
