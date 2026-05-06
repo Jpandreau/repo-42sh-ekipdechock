@@ -19,7 +19,7 @@ OBJ	=	$(patsubst $(STC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRC))
 DEPS	=	$(OBJ:.o=.d)
 
 FLAGS	=	-Wall -Wextra -W -Werror -MMD
-LIBS	=	-lncurses
+LIBS	=
 CRITERION	=	-lcriterion --coverage
 BUILD	=	42sh
 CRITERION_EXEC	=	unit_tests

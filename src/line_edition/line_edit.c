@@ -5,40 +5,59 @@
 ** interactive line editor entry point
 */
 
-#include <ncurses.h>
+#include <termios.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include "base.h"
 #include "line_edition.h"
 
+static void set_raw_mode(void)
+{
+    struct termios raw;
+
+    tcgetattr(STDIN_FILENO, &raw);
+    raw.c_lflag &= ~(ECHO | ICANON);
+    raw.c_iflag &= ~(IXON | ICRNL);
+    raw.c_cc[VMIN] = 1;
+    raw.c_cc[VTIME] = 0;
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+}
+
+static void set_cooked_mode(void)
+{
+    struct termios cooked;
+
+    tcgetattr(STDIN_FILENO, &cooked);
+    cooked.c_lflag |= (ECHO | ICANON);
+    cooked.c_iflag |= ICRNL;
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &cooked);
+}
+
 void line_editor_init(void)
 {
-    initscr();
-    cbreak();
-    noecho();
-    keypad(stdscr, TRUE);
-    clear();
-    refresh();
+    set_raw_mode();
 }
 
 void line_editor_stop(void)
 {
-    endwin();
+    set_cooked_mode();
 }
 
 void line_editor_suspend(void)
 {
-    def_prog_mode();
-    endwin();
+    set_cooked_mode();
 }
 
 void line_editor_resume(void)
 {
-    reset_prog_mode();
+    set_raw_mode();
 }
 
 static int state_init(line_state_t *s, history_t *history)
 {
     s->history = history;
     s->hist_idx = history == NULL ? 0 : history->size;
+    s->prev_len = 0;
     return state_load(s, "");
 }
 
@@ -69,7 +88,5 @@ int interactive_getline(char **line, size_t *len, history_t *history)
         return 84;
     redraw_line(&s);
     status = read_loop(&s);
-    if (status == 0)
-        write(1, "\r\n", 2);
     return finalize(&s, line, len, status);
 }

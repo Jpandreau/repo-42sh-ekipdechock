@@ -10,6 +10,12 @@
 
     #include "small_headers.h"
 
+    #define LE_KEY_UP 1001
+    #define LE_KEY_DOWN 1002
+    #define LE_KEY_RIGHT 1003
+    #define LE_KEY_LEFT 1004
+    #define LE_KEY_DEL 1005
+
 typedef struct line_state_s {
     char *buffer;
     int pos;
@@ -18,7 +24,7 @@ typedef struct line_state_s {
     history_t *history;
     int hist_idx;
     char *saved;
-    int last_cursor_abs;
+    int prev_len;
 } line_state_t;
 
 void line_editor_init(void);
