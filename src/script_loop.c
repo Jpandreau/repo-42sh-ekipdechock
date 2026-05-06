@@ -59,14 +59,21 @@ static int expand_and_store_history(char **line, history_t *history)
 static int handle_interactive_line(char **line, char ***env, exec_ctx_t *ctx)
 {
     int status = expand_and_store_history(line, ctx->history);
+    char *old_cwd = getcwd(NULL, 0);
 
-    if (status != 0)
+    if (status != 0) {
+        free(old_cwd);
         return status;
-    if (*line == NULL)
+    }
+    if (*line == NULL) {
+        free(old_cwd);
         return 0;
+    }
     line_editor_suspend();
     status = handle_line(line, env, ctx);
     line_editor_resume();
+    check_and_run_cwdcmd(old_cwd, env, ctx);
+    free(old_cwd);
     return status;
 }
 
@@ -81,35 +88,38 @@ static int handle_noninteractive_line(char **line, char ***env, size_t *len,
     return 0;
 }
 
+static int check_ignoreof(exec_ctx_t *ctx)
+{
+    if (!isatty(STDIN_FILENO) || ctx == NULL || ctx->shell == NULL)
+        return 84;
+    if (get_local(ctx->shell->locals, "ignoreof") == NULL)
+        return 84;
+    write(STDOUT_FILENO, "Use 'exit' to exit.\n", 20);
+    return 0;
+}
+
 static int loop_step(char **line, size_t *len, char ***env, exec_ctx_t *ctx)
 {
     int status = 0;
 
     job_control_reap(ctx->job);
-    if (isatty(STDIN_FILENO))
+    if (isatty(STDIN_FILENO)) {
+        run_hook("precmd", env, ctx);
         status = interactive_getline(line, len, ctx->history);
-    else
+    } else
         status = clean_getline(line, len);
     if (status == 1) {
         free(*line);
         *line = NULL;
         return 0;
     }
-    if (status == -1 || *line == NULL)
+    if (status == -1)
+        return check_ignoreof(ctx);
+    if (*line == NULL)
         return 84;
     if (isatty(STDIN_FILENO))
         return handle_interactive_line(line, env, ctx);
     return handle_noninteractive_line(line, env, len, ctx);
-}
-
-static int handle_exit_status(int *exit_code)
-{
-    if (!is_exit_status(*exit_code))
-        return 0;
-    *exit_code = exit_status_code(*exit_code);
-    if (isatty(STDIN_FILENO))
-        write(1, "exit\n", 5);
-    return 1;
 }
 
 int final_exit_script_loop(int exit_code, char *line, char **env)
@@ -127,8 +137,12 @@ static int run_loop(char ***env, exec_ctx_t *ctx)
 
     while (exit_code != 84) {
         exit_code = loop_step(&line, &len, env, ctx);
-        if (handle_exit_status(&exit_code))
-            break;
+        if (!is_exit_status(exit_code))
+            continue;
+        exit_code = exit_status_code(exit_code);
+        if (isatty(STDIN_FILENO))
+            write(1, "exit\n", 5);
+        break;
     }
     return final_exit_script_loop(exit_code, line, *env);
 }
