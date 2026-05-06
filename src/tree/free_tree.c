@@ -20,6 +20,8 @@ void free_tree(tree_t *node)
             free(node->args[i]);
         free(node->args);
     }
+    if (node->arg_types)
+        free(node->arg_types);
     if (node->heredoc_fd != -1)
         close(node->heredoc_fd);
     if (node->input)

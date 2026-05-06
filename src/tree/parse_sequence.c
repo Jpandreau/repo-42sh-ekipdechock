@@ -1,6 +1,6 @@
 /*
 ** EPITECH PROJECT, 2026
-** parse_sequence
+** 42sh
 ** File description:
 ** parse_sequence
 */
@@ -17,7 +17,7 @@ static int is_sequence_token(char *token)
     return my_strcmp(token, "&") == 0;
 }
 
-static tree_t *attach_sequence_node(tree_t *left, char **tokens, int *pos)
+static tree_t *attach_sequence_node(tree_t *left, token_t **tokens, int *pos)
 {
     tree_t *node = new_node(TOKEN_SEQUENCE);
     tree_t *right = NULL;
@@ -38,7 +38,7 @@ static tree_t *attach_sequence_node(tree_t *left, char **tokens, int *pos)
     return node;
 }
 
-static tree_t *attach_background_node(tree_t *left, char **tokens, int *pos)
+static tree_t *attach_background_node(tree_t *left, token_t **tokens, int *pos)
 {
     tree_t *node = new_node(TOKEN_BACKGROUND);
 
@@ -59,14 +59,14 @@ static tree_t *attach_background_node(tree_t *left, char **tokens, int *pos)
     return node;
 }
 
-tree_t *parse_sequence(char **tokens, int *pos)
+tree_t *parse_sequence(token_t **tokens, int *pos)
 {
     tree_t *left = parse_logic(tokens, pos);
 
     if (left == NULL)
         return NULL;
-    while (is_sequence_token(tokens[*pos])) {
-        if (my_strcmp(tokens[*pos], "&") == 0)
+    while (tokens[*pos] && is_sequence_token(tokens[*pos]->value)) {
+        if (my_strcmp(tokens[*pos]->value, "&") == 0)
             left = attach_background_node(left, tokens, pos);
         else
             left = attach_sequence_node(left, tokens, pos);

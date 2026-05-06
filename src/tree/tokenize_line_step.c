@@ -1,8 +1,8 @@
 /*
 ** EPITECH PROJECT, 2026
-** tokenize_line_step
+** 42sh
 ** File description:
-** tokenize_line_step
+** tokenizelinestep
 */
 
 #include "tokenize_line_helpers.h"
@@ -10,10 +10,9 @@
 
 static void consume_quote(char *line, tokenize_ctx_t *ctx)
 {
-    if (line[ctx->i] == ctx->quote)
+    if (line[ctx->i] == ctx->quote) {
         ctx->in_quote = 0;
-    else
-    {
+    } else {
         ctx->buf[ctx->len] = line[ctx->i];
         ctx->len++;
     }
@@ -45,7 +44,7 @@ static int handle_in_quote(char *line, tokenize_ctx_t *ctx)
 {
     if (!ctx->in_quote)
         return 0;
-    if (consume_escape(line, ctx))
+    if (ctx->quote != '\'' && consume_escape(line, ctx))
         return 1;
     consume_quote(line, ctx);
     return 1;
@@ -63,8 +62,8 @@ static int handle_space(char *line, tokenize_ctx_t *ctx)
 
 static int is_operator_char(char c)
 {
-    return (c == '|' || c == '&' || c == '>' || c == '<' || c == ';' ||
-        c == '(' || c == ')');
+    return c == '|' || c == ';' || c == '&'
+        || c == '<' || c == '>' || c == '(' || c == ')';
 }
 
 static int handle_operator(char *line, tokenize_ctx_t *ctx)
@@ -78,10 +77,22 @@ static int handle_operator(char *line, tokenize_ctx_t *ctx)
     return 1;
 }
 
+static token_type_t quote_to_type(char quote)
+{
+    if (quote == '\'')
+        return TOKEN_TYPE_SINGLE_QUOTE;
+    if (quote == '"')
+        return TOKEN_TYPE_DOUBLE_QUOTE;
+    return TOKEN_TYPE_BACKTICK;
+}
+
 static int handle_quote_start(char *line, tokenize_ctx_t *ctx)
 {
-    if (line[ctx->i] != '\'' && line[ctx->i] != '"' && line[ctx->i] != '`')
+    if (line[ctx->i] != '\'' && line[ctx->i] != '"'
+        && line[ctx->i] != '`')
         return 0;
+    if (ctx->len == 0)
+        ctx->cur_type = quote_to_type(line[ctx->i]);
     ctx->in_quote = 1;
     ctx->quote = line[ctx->i];
     ctx->i++;

@@ -113,7 +113,7 @@ Test(main_helpers, run_line_error_84_becomes_stop)
     free_array(env);
 }
 
-Test(main_helpers, handle_pipe_line_empty_line)
+Test(main_helpers, handle_pipeline_empty_line)
 {
     char **env = make_heap_env_one("PATH=/bin:/usr/bin");
     int exit_code = 0;
@@ -124,13 +124,13 @@ Test(main_helpers, handle_pipe_line_empty_line)
 
     cr_assert_not_null(env);
     history_init(&history);
-    cr_assert_eq(handle_pipe_line(input, &env, &exit_code, &ctx), 0);
+    cr_assert_eq(handle_pipeline(input, &env, &exit_code, &ctx), 0);
     cr_assert_eq(exit_code, 0);
     history_destroy(&history);
     free_array(env);
 }
 
-Test(main_helpers, handle_pipe_line_exit)
+Test(main_helpers, handle_pipeline_exit)
 {
     char **env = make_heap_env_one("PATH=/bin:/usr/bin");
     int exit_code = 0;
@@ -141,7 +141,7 @@ Test(main_helpers, handle_pipe_line_exit)
 
     cr_assert_not_null(env);
     history_init(&history);
-    cr_assert_eq(handle_pipe_line(input, &env, &exit_code, &ctx), 1);
+    cr_assert_eq(handle_pipeline(input, &env, &exit_code, &ctx), 1);
     cr_assert_eq(exit_code, 3);
     history_destroy(&history);
     free_array(env);

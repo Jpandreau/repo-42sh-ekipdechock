@@ -23,5 +23,6 @@ tree_t *new_node(tree_type_t type)
     node->heredoc = 0;
     node->heredoc_fd = -1;
     node->args = NULL;
+    node->arg_types = NULL;
     return node;
 }

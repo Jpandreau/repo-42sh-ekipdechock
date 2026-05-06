@@ -78,3 +78,53 @@ Test(glob_pattern, multiple_patterns)
     cr_assert_eq(is_glob_pattern("*.[ch]"), 1);
     cr_assert_eq(is_glob_pattern("test_[0-9]*"), 1);
 }
+
+Test(expand_glob, c_files_expansion)
+{
+    char **results = NULL;
+    int ret;
+
+    ret = expand_glob_pattern("src/*.c", &results);
+    cr_assert_eq(ret, 0);
+    cr_assert_not_null(results);
+    cr_assert_not_null(results[0]);
+    free_array(results);
+}
+
+Test(expand_glob, h_files_expansion)
+{
+    char **results = NULL;
+    int ret;
+
+    ret = expand_glob_pattern("include/*.h", &results);
+    cr_assert_eq(ret, 0);
+    cr_assert_not_null(results);
+    cr_assert_not_null(results[0]);
+    free_array(results);
+}
+
+Test(expand_glob, no_match_returns_error)
+{
+    char **results = NULL;
+    int ret;
+
+    ret = expand_glob_pattern("nonexistent_*.xyz", &results);
+    cr_assert_eq(ret, 1);
+}
+
+Test(expand_glob, null_pattern_returns_error)
+{
+    char **results = NULL;
+    int ret;
+
+    ret = expand_glob_pattern(NULL, &results);
+    cr_assert_eq(ret, 1);
+}
+
+Test(expand_glob, null_results_returns_error)
+{
+    int ret;
+
+    ret = expand_glob_pattern("src/*.c", NULL);
+    cr_assert_eq(ret, 1);
+}

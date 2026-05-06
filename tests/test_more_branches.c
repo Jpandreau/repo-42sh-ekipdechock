@@ -156,7 +156,7 @@ Test(cd_more, my_chdir_permission_denied)
     free_array(env);
 }
 
-Test(main_helpers_more, handle_pipe_line_runs_tree)
+Test(main_helpers_more, handle_pipeline_runs_tree)
 {
     char **env = malloc(sizeof(char *) * 2);
     char line[] = "env\n";
@@ -169,13 +169,13 @@ Test(main_helpers_more, handle_pipe_line_runs_tree)
     env[0] = my_strdup("PATH=/bin:/usr/bin");
     env[1] = NULL;
     history_init(&history);
-    cr_assert_eq(handle_pipe_line(line, &env, &exit_code, &ctx), 0);
+    cr_assert_eq(handle_pipeline(line, &env, &exit_code, &ctx), 0);
     cr_assert_eq(exit_code, 0);
     history_destroy(&history);
     free_array(env);
 }
 
-Test(main_helpers_more, handle_pipe_line_tree_null)
+Test(main_helpers_more, handle_pipeline_tree_null)
 {
     char **env = malloc(sizeof(char *) * 2);
     char line[] = ";\n";
@@ -188,7 +188,7 @@ Test(main_helpers_more, handle_pipe_line_tree_null)
     env[0] = my_strdup("PATH=/bin:/usr/bin");
     env[1] = NULL;
     history_init(&history);
-    cr_assert_eq(handle_pipe_line(line, &env, &exit_code, &ctx), 0);
+    cr_assert_eq(handle_pipeline(line, &env, &exit_code, &ctx), 0);
     history_destroy(&history);
     free_array(env);
 }

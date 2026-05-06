@@ -21,6 +21,7 @@ typedef enum {
     TOKEN_REDIR_LEFT,
     TOKEN_REDIR_RIGHT,
     TOKEN_REDIR_APPEND,
+    TOKEN_SUBSHELL,
     TOKEN_EOF
 } tree_type_t;
 
@@ -34,6 +35,7 @@ typedef struct tree_s {
     int heredoc;
     int heredoc_fd;
     char **args;
+    token_type_t *arg_types;
 } tree_t;
 
 typedef struct pipe_exec_ctx_s {
@@ -47,16 +49,19 @@ typedef struct pipe_exec_ctx_s {
     exec_ctx_t *ctx;
 } pipe_exec_ctx_t;
 
-tree_t *parse_sequence(char **tokens, int *pos);
-tree_t *parse_logic(char **tokens, int *pos);
-tree_t *parse_pipe(char **tokens, int *pos);
-tree_t *parse_command(char **tokens, int *pos);
+tree_t *parse_sequence(token_t **tokens, int *pos);
+tree_t *parse_logic(token_t **tokens, int *pos);
+tree_t *parse_pipe(token_t **tokens, int *pos);
+tree_t *parse_command(token_t **tokens, int *pos);
+tree_t *parse_subshell(token_t **tokens, int *pos);
+tree_t *parse_primary(token_t **tokens, int *pos);
 
 tree_t *new_node(tree_type_t type);
 tree_t *get_tree_token(char *line);
 
 int exec_tree(tree_t *node, char ***env, exec_ctx_t *ctx);
 int exec_tree_nofork(tree_t *node, char ***env, exec_ctx_t *ctx);
+int exec_subshell(tree_t *node, char ***env, exec_ctx_t *ctx);
 int exec_pipe(tree_t *node, char ***env, exec_ctx_t *ctx);
 int exec_background(tree_t *node, char ***env, exec_ctx_t *ctx);
 int exec_cmd_node_nofork(tree_t *node, char ***env, exec_ctx_t *ctx);
