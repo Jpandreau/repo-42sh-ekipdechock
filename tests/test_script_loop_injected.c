@@ -20,6 +20,11 @@ static int g_handle_line_status = 0;
 static int g_getline_idx = 0;
 static ssize_t g_getline_ret[4] = {0};
 static const char *g_getline_txt[4] = {0};
+static char *g_ignoreof_val = NULL;
+static int g_run_hook_calls = 0;
+static char g_run_hook_name[64] = {0};
+static int g_cwdcmd_calls = 0;
+static char g_getcwd_buf[64] = "/mocked/dir";
 
 int mocked_isatty(int fd)
 {
@@ -126,6 +131,38 @@ int mocked_interactive_getline(char **line, size_t *len, history_t *history)
     return 0;
 }
 
+char *mocked_get_local(char **locals, char *key)
+{
+    (void)locals;
+    if (my_strcmp(key, "ignoreof") == 0)
+        return g_ignoreof_val;
+    return NULL;
+}
+
+void mocked_run_hook(char *name, char ***env, exec_ctx_t *ctx)
+{
+    (void)env;
+    (void)ctx;
+    g_run_hook_calls++;
+    if (name != NULL)
+        strncpy(g_run_hook_name, name, sizeof(g_run_hook_name) - 1);
+}
+
+void mocked_check_and_run_cwdcmd(char *old_cwd, char ***env, exec_ctx_t *ctx)
+{
+    (void)old_cwd;
+    (void)env;
+    (void)ctx;
+    g_cwdcmd_calls++;
+}
+
+char *mocked_getcwd(char *buf, size_t size)
+{
+    (void)buf;
+    (void)size;
+    return my_strdup(g_getcwd_buf);
+}
+
 static void mocked_line_editor_init(void) {}
 static void mocked_line_editor_stop(void) {}
 static void mocked_line_editor_suspend(void) {}
@@ -149,7 +186,21 @@ static void mocked_line_editor_resume(void) {}
 #define line_editor_stop mocked_line_editor_stop
 #define line_editor_suspend mocked_line_editor_suspend
 #define line_editor_resume mocked_line_editor_resume
+#define check_ignoreof tested_check_ignoreof
+#define loop_step tested_loop_step
+#define handle_interactive_line tested_handle_interactive_line
+#define get_local mocked_get_local
+#define run_hook mocked_run_hook
+#define check_and_run_cwdcmd mocked_check_and_run_cwdcmd
+#define getcwd mocked_getcwd
 #include "../src/script_loop.c"
+#undef getcwd
+#undef check_and_run_cwdcmd
+#undef run_hook
+#undef get_local
+#undef handle_interactive_line
+#undef loop_step
+#undef check_ignoreof
 #undef line_editor_resume
 #undef line_editor_suspend
 #undef line_editor_stop
@@ -180,6 +231,10 @@ static void reset_mocks(void)
         g_getline_ret[i] = 0;
         g_getline_txt[i] = NULL;
     }
+    g_ignoreof_val = NULL;
+    g_run_hook_calls = 0;
+    g_run_hook_name[0] = '\0';
+    g_cwdcmd_calls = 0;
 }
 
 Test(script_loop_injected, clean_getline_eof_tty_prints_exit)
@@ -257,4 +312,74 @@ Test(script_loop_injected, clean_getline_returns_1_on_empty_line)
     g_getline_txt[0] = "\n";
     cr_assert_eq(tested_clean_getline(&line, &len), 1);
     free(line);
+}
+
+Test(script_loop_injected, check_ignoreof_no_tty_returns_84)
+{
+    shell_t shell = {NULL, NULL};
+    exec_ctx_t ctx = {NULL, NULL, &shell};
+
+    reset_mocks();
+    g_isatty = 0;
+    cr_assert_eq(tested_check_ignoreof(&ctx), 84);
+}
+
+Test(script_loop_injected, check_ignoreof_tty_no_var_returns_84)
+{
+    shell_t shell = {NULL, NULL};
+    exec_ctx_t ctx = {NULL, NULL, &shell};
+
+    reset_mocks();
+    g_isatty = 1;
+    cr_assert_eq(tested_check_ignoreof(&ctx), 84);
+}
+
+Test(script_loop_injected, check_ignoreof_tty_with_var_returns_0)
+{
+    shell_t shell = {NULL, NULL};
+    exec_ctx_t ctx = {NULL, NULL, &shell};
+
+    reset_mocks();
+    g_isatty = 1;
+    g_ignoreof_val = "1";
+    cr_assert_eq(tested_check_ignoreof(&ctx), 0);
+    cr_assert_gt(g_write_calls, 0);
+}
+
+Test(script_loop_injected, loop_step_calls_precmd_on_tty)
+{
+    char *line = NULL;
+    size_t len = 0;
+    char **env = calloc(1, sizeof(char *));
+    job_state_t job = {0};
+    shell_t shell = {NULL, NULL};
+    history_t hist = {0};
+    exec_ctx_t ctx = {&hist, &job, &shell};
+
+    cr_assert_not_null(env);
+    reset_mocks();
+    g_isatty = 1;
+    g_getline_ret[0] = -1;
+    tested_loop_step(&line, &len, &env, &ctx);
+    cr_assert_eq(g_run_hook_calls, 1);
+    cr_assert_str_eq(g_run_hook_name, "precmd");
+    free(env);
+}
+
+Test(script_loop_injected, handle_interactive_calls_cwdcmd)
+{
+    char *line = my_strdup("echo test");
+    char **env = calloc(1, sizeof(char *));
+    job_state_t job = {0};
+    shell_t shell = {NULL, NULL};
+    history_t hist = {0};
+    exec_ctx_t ctx = {&hist, &job, &shell};
+
+    cr_assert_not_null(line);
+    cr_assert_not_null(env);
+    reset_mocks();
+    g_handle_line_status = 0;
+    tested_handle_interactive_line(&line, &env, &ctx);
+    cr_assert_eq(g_cwdcmd_calls, 1);
+    free(env);
 }
